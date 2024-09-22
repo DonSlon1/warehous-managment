@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="item_name">Název</string>
+    <string name="sku">SKU</string>
+    <string name="category">Kategorie</string>
+    <string name="quantity">Kvantita</string>
+    <string name="supplier">Dodavatel</string>
+    <string name="unit_price">Cena</string>
+    <string name="save">Uložit</string>
+    <string name="add_item">Přidat předmět</string>
+    <string name="reorder_level">Reorder Level</string>
+    <string name="quantity_text">Množství: %1$d</string>
+</resources>
