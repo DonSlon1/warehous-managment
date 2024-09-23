@@ -12,7 +12,7 @@ data class InventoryItem(
     @PrimaryKey val id: String,
     val name: String,
     val sku: String,
-    val ean: String,
+    val ean: Int,
     val category: String,
     val quantity: Int,
     val supplier: String,

@@ -22,28 +22,36 @@
                 android:id="@+id/editTextName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints=""
                 android:hint="@string/item_name"
+                android:inputType="text"
                 android:minHeight="48dp" />
 
             <EditText
                 android:id="@+id/editTextSku"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints=""
                 android:hint="@string/sku"
+                android:inputType="text"
                 android:minHeight="48dp" />
 
             <EditText
                 android:id="@+id/editTextEan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints=""
                 android:hint="@string/ean"
+                android:inputType="number"
                 android:minHeight="48dp" />
 
             <EditText
                 android:id="@+id/editTextCategory"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints=""
                 android:hint="@string/category"
+                android:inputType="text"
                 android:minHeight="48dp" />
 
             <EditText
@@ -52,6 +60,7 @@
                 android:layout_height="wrap_content"
                 android:autofillHints=""
                 android:hint="@string/supplier"
+                android:inputType="text"
                 android:minHeight="48dp" />
 
             <EditText

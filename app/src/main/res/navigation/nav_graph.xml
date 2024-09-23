@@ -20,7 +20,8 @@
             android:id="@+id/action_addItemFragment_to_mainFragment"
             android:name="inventoryItem"
             app:argType="com.example.smartinventory.data.model.InventoryItem"
-            app:nullable="true" />
+            app:nullable="true"
+            android:defaultValue="@null" />
     </fragment>
 
 </navigation>

@@ -3,6 +3,7 @@
 package com.example.smartinventory.ui.additem.view
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.navigation.navArgument
 import com.example.smartinventory.R
 import com.example.smartinventory.databinding.FragmentAddItemBinding
 import com.example.smartinventory.data.model.InventoryItem
@@ -26,6 +28,7 @@ class AddItemFragment : Fragment() {
 
     private val addItemViewModel: AddItemViewModel by viewModels()
     private val args: AddItemFragmentArgs by navArgs()
+
 
     private var isEditMode: Boolean = false
     private var currentItem: InventoryItem? = null
@@ -75,18 +78,19 @@ class AddItemFragment : Fragment() {
         val supplier = binding.editTextSupplier.text.toString().trim()
         val reorderLevelStr = binding.editTextReorderLevel.text.toString().trim()
         val unitPriceStr = binding.editTextUnitPrice.text.toString().trim()
-        val ean = binding.editTextEan.text.toString().trim()
+        val eanStr = binding.editTextEan.text.toString().trim()
         // Collect other fields as needed
 
         // Validate inputs
         if (name.isEmpty() || sku.isEmpty() || category.isEmpty()|| supplier.isEmpty() ||
-            reorderLevelStr.isEmpty() || unitPriceStr.isEmpty() || ean.isEmpty()) {
+            reorderLevelStr.isEmpty() || unitPriceStr.isEmpty() || eanStr.isEmpty()) {
             Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
         val reorderLevel = reorderLevelStr.toIntOrNull() ?: 0
         val unitPrice = unitPriceStr.toDoubleOrNull() ?: 0.0
+        val ean = eanStr.toIntOrNull() ?: 0
 
         val newItem = InventoryItem(
             id = (currentItem?.id ?: 0).toString(), // Use existing ID for editing
