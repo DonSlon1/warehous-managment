@@ -19,5 +19,9 @@ class AddItemViewModel @Inject constructor(
         }
     }
 
-    // Other methods as needed
+    fun update(item: InventoryItem) {
+        viewModelScope.launch {
+            repository.update(item)
+        }
+    }
 }

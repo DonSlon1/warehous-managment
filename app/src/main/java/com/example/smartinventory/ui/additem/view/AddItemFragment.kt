@@ -58,7 +58,7 @@ class AddItemFragment : Fragment() {
                 )
 
                 addItemViewModel.insert(newItem)
-                findNavController().navigate(R.id.action_addItemFragment_to_mainFragment)
+                findNavController().navigate(R.id.addItemFragment)
             } else {
                 // Handle validation error
             }

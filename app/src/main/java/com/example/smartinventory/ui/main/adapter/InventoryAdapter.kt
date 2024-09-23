@@ -5,10 +5,11 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.databinding.ItemInventoryBinding
+import com.example.smartinventory.data.model.InventoryItem
 
-class InventoryAdapter : ListAdapter<InventoryItem, InventoryAdapter.InventoryViewHolder>(InventoryDiffCallback()) {
+class InventoryAdapter(private val onEditClick: (InventoryItem) -> Unit) :
+    ListAdapter<InventoryItem, InventoryAdapter.InventoryViewHolder>(InventoryDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InventoryViewHolder {
         val binding = ItemInventoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -16,14 +17,26 @@ class InventoryAdapter : ListAdapter<InventoryItem, InventoryAdapter.InventoryVi
     }
 
     override fun onBindViewHolder(holder: InventoryViewHolder, position: Int) {
-        val currentItem = getItem(position)
-        holder.bind(currentItem)
+        val item = getItem(position)
+        holder.bind(item)
     }
 
-    class InventoryViewHolder(private val binding: ItemInventoryBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class InventoryViewHolder(private val binding: ItemInventoryBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
         fun bind(item: InventoryItem) {
             binding.inventoryItem = item
             binding.executePendingBindings()
+
+            // Handle edit button click
+            binding.btnEdit.setOnClickListener {
+                onEditClick(item)
+            }
+
+            // Optionally, handle item click for viewing/editing
+            binding.root.setOnClickListener {
+                onEditClick(item)
+            }
         }
     }
 
