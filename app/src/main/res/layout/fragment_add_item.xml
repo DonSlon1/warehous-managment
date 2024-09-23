@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
+        <import type="android.view.View" /> <!-- Import View for visibility attributes (if needed) -->
+
         <variable
             name="viewModel"
             type="com.example.smartinventory.viewmodel.additem.AddItemViewModel" />
@@ -88,7 +91,15 @@
                 android:id="@+id/buttonSave"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/save" />
+                android:text="@{viewModel.isEditMode ? @string/update_item : @string/add_item}" />
+
+            <!-- Delete Button (Visible only in Edit Mode) -->
+            <Button
+                android:id="@+id/buttonDelete"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/delete"
+                android:visibility="@{viewModel.isEditMode ? View.VISIBLE : View.GONE}" />
 
         </LinearLayout>
     </ScrollView>

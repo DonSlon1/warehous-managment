@@ -33,7 +33,10 @@ class AddItemFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        _binding = FragmentAddItemBinding.inflate(inflater, container, false)
+        _binding = FragmentAddItemBinding.inflate(inflater, container, false).apply {
+            lifecycleOwner = viewLifecycleOwner
+            viewModel = addItemViewModel
+        }
         return binding.root
     }
 
@@ -42,14 +45,21 @@ class AddItemFragment : Fragment() {
 
         isEditMode = args.inventoryItem != null
         currentItem = args.inventoryItem
+        addItemViewModel.isEditMode = isEditMode
 
         if (isEditMode) {
             populateFields(currentItem)
-            binding.buttonSave.text = getString(R.string.update_item)
+            //binding.buttonSave.text = getString(R.string.update_item)
         }
 
         binding.buttonSave.setOnClickListener {
             saveItem()
+        }
+
+        binding.buttonDelete.setOnClickListener {
+            addItemViewModel.delete(currentItem!!)
+            Toast.makeText(requireContext(), getString(R.string.item_deleted), Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_addItemFragment_to_mainFragment)
         }
     }
 

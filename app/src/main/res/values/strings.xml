@@ -14,4 +14,6 @@
     <string name="update_item">Edit</string>
     <string name="item_updated">Item updated</string>
     <string name="item_added">Item added</string>
+    <string name="item_deleted">Item deleted</string>
+    <string name="delete">Delete</string>
 </resources>
