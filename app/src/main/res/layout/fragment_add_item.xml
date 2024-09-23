@@ -33,18 +33,17 @@
                 android:minHeight="48dp" />
 
             <EditText
+                android:id="@+id/editTextEan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ean"
+                android:minHeight="48dp" />
+
+            <EditText
                 android:id="@+id/editTextCategory"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/category"
-                android:minHeight="48dp" />
-
-            <EditText
-                android:id="@+id/editTextQuantity"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/quantity"
-                android:inputType="number"
                 android:minHeight="48dp" />
 
             <EditText

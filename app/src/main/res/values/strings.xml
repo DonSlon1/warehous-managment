@@ -10,4 +10,5 @@
     <string name="app_name" translatable="false">Warehouse App</string>
     <string name="add_item">Add Item</string>
     <string name="quantity_text">Quantity: %1$d</string>
+    <string name="ean">EAN\n</string>
 </resources>

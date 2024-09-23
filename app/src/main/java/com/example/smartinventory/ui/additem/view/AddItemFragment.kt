@@ -35,20 +35,25 @@ class AddItemFragment : Fragment() {
 
         binding.buttonSave.setOnClickListener {
             val itemName = binding.editTextName.text.toString()
-            val quantity = binding.editTextQuantity.text.toString().toIntOrNull() ?: 0
+            val unitPrice = binding.editTextUnitPrice.text.toString().toDoubleOrNull()
+            val sku = binding.editTextSku.text.toString()
+            val ean = binding.editTextEan.text.toString()
+
+
             // Collect other fields similarly
 
             if (validateInput(itemName /*, other fields */)) {
                 val newItem = InventoryItem(
                     id = UUID.randomUUID().toString(),
                     name = itemName,
-                    sku = "SKU",
+                    sku = sku,
+                    ean = ean,
                     category = "Category",
-                    quantity = quantity,
+                    quantity = 0,
                     supplier = "Supplier",
                     reorderLevel = 0,
-                    unitPrice = 0.0,
-                    Date(),
+                    unitPrice = unitPrice ?: 0.0,
+                    expiryDate = Date(),
                     imageUrl = "https://via.placeholder.com/150"
                 )
 
