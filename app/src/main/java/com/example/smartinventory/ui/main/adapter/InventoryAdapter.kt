@@ -29,7 +29,7 @@ class InventoryAdapter(private val onEditClick: (InventoryItem) -> Unit) :
             binding.executePendingBindings()
 
             // Handle edit button click
-            binding.btnEdit.setOnClickListener {
+            binding.itemLayout.setOnClickListener {
                 onEditClick(item)
             }
 

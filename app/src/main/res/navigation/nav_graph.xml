@@ -6,7 +6,7 @@
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.example.smartinventory.ui.main.view.MainFragment"
-        android:label="Main Fragment">
+        android:label="@string/app_name">
         <action
             android:id="@+id/action_mainFragment_to_addItemFragment"
             app:destination="@id/addItemFragment" />
@@ -20,7 +20,7 @@
             android:id="@+id/action_addItemFragment_to_mainFragment"
             android:name="inventoryItem"
             app:argType="com.example.smartinventory.data.model.InventoryItem"
-            app:nullable="true" /> <!-- Make it explicitly nullable -->
+            app:nullable="true" />
     </fragment>
 
 </navigation>
