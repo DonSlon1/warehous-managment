@@ -1,9 +1,6 @@
-// app/src/main/java/com/example/smartinventory/ui/additem/view/AddItemFragment.kt
-
 package com.example.smartinventory.ui.additem.view
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.navigation.navArgument
 import com.example.smartinventory.R
 import com.example.smartinventory.databinding.FragmentAddItemBinding
 import com.example.smartinventory.data.model.InventoryItem
@@ -62,7 +58,7 @@ class AddItemFragment : Fragment() {
             binding.editTextName.setText(it.name)
             binding.editTextSku.setText(it.sku)
             binding.editTextCategory.setText(it.category)
-            binding.editTextEan.setText(it.ean)
+            binding.editTextEan.setText(it.ean.toString())
             //binding..setText(it.quantity.toString())
             binding.editTextSupplier.setText(it.supplier)
             binding.editTextReorderLevel.setText(it.reorderLevel.toString())
@@ -108,13 +104,13 @@ class AddItemFragment : Fragment() {
 
         if (isEditMode) {
             addItemViewModel.update(newItem)
-            Toast.makeText(requireContext(), "Item updated", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.item_updated), Toast.LENGTH_SHORT).show()
         } else {
             addItemViewModel.insert(newItem)
-            Toast.makeText(requireContext(), "Item added", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.item_added), Toast.LENGTH_SHORT).show()
         }
 
-        findNavController().navigateUp()
+        findNavController().navigate(R.id.action_addItemFragment_to_mainFragment)
     }
 
     override fun onDestroyView() {

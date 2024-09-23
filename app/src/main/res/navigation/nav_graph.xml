@@ -1,12 +1,14 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
+    xmlns:tools="http://schemas.android.com/tools"
     app:startDestination="@id/mainFragment">
 
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.example.smartinventory.ui.main.view.MainFragment"
-        android:label="@string/app_name">
+        android:label="@string/app_name"
+        tools:layout="@layout/fragment_main">
         <action
             android:id="@+id/action_mainFragment_to_addItemFragment"
             app:destination="@id/addItemFragment" />
@@ -15,13 +17,17 @@
     <fragment
         android:id="@+id/addItemFragment"
         android:name="com.example.smartinventory.ui.additem.view.AddItemFragment"
-        android:label="@string/add_item">
+        android:label="@string/add_item"
+        tools:layout="@layout/fragment_add_item">
         <argument
-            android:id="@+id/action_addItemFragment_to_mainFragment"
+            android:id="@+id/existingItem"
             android:name="inventoryItem"
             app:argType="com.example.smartinventory.data.model.InventoryItem"
             app:nullable="true"
             android:defaultValue="@null" />
+        <action
+            android:id="@+id/action_addItemFragment_to_mainFragment"
+            app:destination="@id/mainFragment" />
     </fragment>
 
 </navigation>

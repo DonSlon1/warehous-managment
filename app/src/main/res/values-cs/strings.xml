@@ -11,5 +11,7 @@
     <string name="reorder_level">Reorder Level</string>
     <string name="quantity_text">Množství: %1$d</string>
     <string name="ean">EAN</string>
-    <string name="update_item">Edit</string>
+    <string name="update_item">Upravit</string>
+    <string name="item_updated">Předmět byl aktualizován</string>
+    <string name="item_added">Předmět byl přidán</string>
 </resources>

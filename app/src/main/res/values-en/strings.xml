@@ -12,4 +12,6 @@
     <string name="quantity_text">Quantity: %1$d</string>
     <string name="ean">EAN</string>
     <string name="update_item">Edit</string>
+    <string name="item_updated">Item updated</string>
+    <string name="item_added">Item added</string>
 </resources>
