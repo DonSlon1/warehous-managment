@@ -47,9 +47,9 @@ class MainFragment : Fragment() {
             layoutManager = LinearLayoutManager(context)
         }
 
-        mainViewModel.allInventoryItems.observe(viewLifecycleOwner, { items ->
+        mainViewModel.allInventoryItems.observe(viewLifecycleOwner) { items ->
             inventoryAdapter.submitList(items)
-        })
+        }
 
         binding.fabAddItem.setOnClickListener {
             // Navigate to AddItemFragment without any item for adding a new item

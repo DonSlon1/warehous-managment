@@ -1,21 +1,27 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/nav_graph"
     xmlns:tools="http://schemas.android.com/tools"
-    app:startDestination="@id/mainFragment">
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navMainFragment">
 
     <fragment
-        android:id="@+id/mainFragment"
+        android:id="@+id/navWarehouseActions"
+        android:name="com.example.smartinventory.ui.warehouseaction.view.WarehouseActionFragment"
+        android:label="@string/warehouse_actions"
+        tools:layout="@layout/fragment_warehouse_action" />
+
+    <fragment
+        android:id="@+id/navMainFragment"
         android:name="com.example.smartinventory.ui.main.view.MainFragment"
         android:label="@string/app_name"
         tools:layout="@layout/fragment_main">
         <action
             android:id="@+id/action_mainFragment_to_addItemFragment"
-            app:destination="@id/addItemFragment" />
+            app:destination="@id/navAddItemFragment" />
     </fragment>
 
     <fragment
-        android:id="@+id/addItemFragment"
+        android:id="@+id/navAddItemFragment"
         android:name="com.example.smartinventory.ui.additem.view.AddItemFragment"
         android:label="@string/add_item"
         tools:layout="@layout/fragment_add_item">
@@ -27,7 +33,7 @@
             android:defaultValue="@null" />
         <action
             android:id="@+id/action_addItemFragment_to_mainFragment"
-            app:destination="@id/mainFragment" />
+            app:destination="@id/navMainFragment" />
     </fragment>
 
 </navigation>

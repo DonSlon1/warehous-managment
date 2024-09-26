@@ -16,4 +16,6 @@
     <string name="item_added">Předmět byl přidán</string>
     <string name="item_deleted">Předmět byl smazán</string>
     <string name="delete">Smazat</string>
+    <string name="items">items</string>
+    <string name="warehouse_actions">Skadové Akce</string>
 </resources>

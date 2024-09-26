@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/itemFragment"
+            android:icon="@drawable/archive"
+            android:title="@string/items" />
+        <item
+            android:id="@+id/warehouseActionFragment"
+            android:icon="@drawable/archive_arrow_down"
+            android:title="@string/warehouse_actions" />
+    </group>
+</menu>
