@@ -1,0 +1,15 @@
+package com.example.smartinventory.data.model
+
+import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.PrimaryKey
+import kotlinx.parcelize.Parcelize
+
+
+@Parcelize
+@Entity(primaryKeys = ["warehouseActionId", "inventoryItemId"])
+data class WarehouseActionItem (
+    val warehouseActionId: Long = 0L,
+    val inventoryItemId: Long = 0L,
+) : Parcelable

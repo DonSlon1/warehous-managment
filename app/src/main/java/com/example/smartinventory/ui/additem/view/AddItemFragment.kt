@@ -99,7 +99,7 @@ class AddItemFragment : Fragment() {
         val ean = eanStr.toIntOrNull() ?: 0
 
         val newItem = InventoryItem(
-            id = (currentItem?.id ?: 0).toString(), // Use existing ID for editing
+            id = currentItem?.id ?: 0, // Use existing ID for editing
             name = name,
             sku = sku,
             category = category,
