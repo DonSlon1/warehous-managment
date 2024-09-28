@@ -12,7 +12,6 @@ import com.example.smartinventory.R
 import com.example.smartinventory.databinding.FragmentMainBinding
 import com.example.smartinventory.ui.main.adapter.InventoryAdapter
 import com.example.smartinventory.viewmodel.main.MainViewModel
-import com.example.smartinventory.data.model.InventoryItem
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

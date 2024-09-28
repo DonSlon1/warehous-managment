@@ -8,7 +8,21 @@
         android:id="@+id/warehouseActionFragment"
         android:name="com.example.smartinventory.ui.warehouseaction.view.WarehouseActionFragment"
         android:label="@string/warehouse_actions"
-        tools:layout="@layout/fragment_warehouse_action" />
+        tools:layout="@layout/fragment_warehouse_action" >
+        <action
+            android:id="@+id/action_warehouseActionFragment_to_navAddWarehouseItemFragment"
+            app:destination="@id/navAddWarehouseItemFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navAddWarehouseItemFragment"
+        android:name="com.example.smartinventory.ui.addwarehouseitem.view.AddWarehouseItemFragment"
+        android:label="@string/add_warehouse_item"
+        tools:layout="@layout/fragment_add_warehouse_item" >
+        <action
+            android:id="@+id/action_navAddWarehouseItemFragment_to_warehouseActionFragment"
+            app:destination="@id/warehouseActionFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/itemFragment"

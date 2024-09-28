@@ -18,4 +18,5 @@
     <string name="delete">Delete</string>
     <string name="items">items</string>
     <string name="warehouse_actions">Warehouse Actions</string>
+    <string name="add_warehouse_item">Add Warehouse Action</string>
 </resources>
