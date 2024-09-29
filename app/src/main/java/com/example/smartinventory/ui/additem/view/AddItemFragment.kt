@@ -10,11 +10,11 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.smartinventory.R
-import com.example.smartinventory.databinding.FragmentAddItemBinding
 import com.example.smartinventory.data.model.InventoryItem
+import com.example.smartinventory.databinding.FragmentAddItemBinding
 import com.example.smartinventory.viewmodel.additem.AddItemViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.*
+import java.util.Date
 
 @AndroidEntryPoint
 class AddItemFragment : Fragment() {

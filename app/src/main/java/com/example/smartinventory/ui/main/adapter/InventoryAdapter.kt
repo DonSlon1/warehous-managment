@@ -5,8 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.smartinventory.databinding.ItemInventoryBinding
 import com.example.smartinventory.data.model.InventoryItem
+import com.example.smartinventory.databinding.ItemInventoryBinding
 
 class InventoryAdapter(private val onEditClick: (InventoryItem) -> Unit) :
     ListAdapter<InventoryItem, InventoryAdapter.InventoryViewHolder>(InventoryDiffCallback()) {

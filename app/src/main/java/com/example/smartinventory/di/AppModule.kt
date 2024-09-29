@@ -2,15 +2,15 @@ package com.example.smartinventory.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.smartinventory.data.local.database.InventoryDatabase
 import com.example.smartinventory.data.local.dao.InventoryDao
 import com.example.smartinventory.data.local.dao.WarehouseActionItemWithItemsDao
+import com.example.smartinventory.data.local.database.InventoryDatabase
 import com.example.smartinventory.data.repository.InventoryRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module

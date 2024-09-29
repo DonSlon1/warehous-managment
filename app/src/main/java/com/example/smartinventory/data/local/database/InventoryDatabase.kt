@@ -10,7 +10,6 @@ import com.example.smartinventory.data.local.dao.WarehouseActionItemWithItemsDao
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.data.model.WarehouseAction
 import com.example.smartinventory.utils.Converters
-import dagger.Provides
 
 @Database(
     entities = [
