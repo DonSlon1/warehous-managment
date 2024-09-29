@@ -1,11 +1,10 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("dagger.hilt.android.plugin")
     id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
     id("kotlin-parcelize")
     id("androidx.navigation.safeargs.kotlin")
-    id("dagger.hilt.android.plugin")
 }
 
 android {
@@ -32,97 +31,84 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
     buildFeatures {
         compose = true
         dataBinding = true
         viewBinding = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
+        kotlinCompilerExtensionVersion = "1.5.15" // Use the latest stable version
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
     packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    dataBinding {
-        enable = true
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
 
 dependencies {
     // Core Android dependencies
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.recyclerview:recyclerview:1.3.1")
-    implementation("androidx.fragment:fragment-ktx:1.6.1")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.fragment:fragment-ktx:1.8.3")
 
     // Navigation Components
-    implementation("androidx.navigation:navigation-fragment-ktx:2.7.2")
-    implementation("androidx.navigation:navigation-ui-ktx:2.7.2")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.8.1")
+    implementation("androidx.navigation:navigation-ui-ktx:2.8.1")
+    implementation("androidx.navigation:navigation-compose:2.8.1")
 
     // Lifecycle Components
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
 
     // Compose Dependencies
-    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.09.02"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material")
-    implementation("androidx.activity:activity-compose:1.7.2")
-    implementation("androidx.navigation:navigation-compose:2.7.2")
+    implementation("androidx.compose.material3:material3:1.3.0")
+    implementation("androidx.activity:activity-compose:1.9.2")
     implementation(libs.androidx.runtime.livedata)
-    implementation(libs.androidx.material3.android)
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Hilt Dependencies
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-android-compiler:2.48")
-
-    // Hilt and ViewModel Integration
-    implementation(libs.androidx.hilt.navigation.fragment)
-    implementation(libs.androidx.hilt.navigation.compose)
-    // Note: The following artifact is deprecated and replaced by hilt-navigation-compose
-    // implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
-    // kapt("androidx.hilt:hilt-compiler:1.0.0")
-    // Since hilt-lifecycle-viewmodel is deprecated, we don't use it.
+    // Dagger and Hilt Dependencies
+    implementation("com.google.dagger:dagger:2.52")
+    kapt("com.google.dagger:dagger-compiler:2.52")
+    implementation("com.google.dagger:hilt-android:2.52")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Room Database
-    implementation("androidx.room:room-runtime:2.6.0-alpha02")
-    kapt("androidx.room:room-compiler:2.6.0-alpha02")
-    implementation("androidx.room:room-ktx:2.6.0-alpha02")
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
-    // Glide for image loading
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    kapt("com.github.bumptech.glide:compiler:4.16.0")
+    // Glide
+    implementation(libs.glide)
+    kapt(libs.compiler)
 
-    // ML Kit Vision dependencies (if using)
-    implementation("com.google.mlkit:barcode-scanning:17.0.3")
-    implementation("com.google.mlkit:common:17.0.2")
+    // ML Kit Vision
+    implementation(libs.barcode.scanning)
+    implementation(libs.common)
 
     // Testing dependencies
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
+    androidTestImplementation(libs.androidx.compose.ui.ui.test.junit4)
 }
 
 kapt {
