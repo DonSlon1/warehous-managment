@@ -14,8 +14,8 @@ import kotlinx.parcelize.Parcelize
 data class WarehouseAction(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
-    val type: String,
-    val status: String,
+    val type: WarehouseActionType,
+    val status: WarehouseActionStatus,
     val name: String,
 ) : Parcelable
 
