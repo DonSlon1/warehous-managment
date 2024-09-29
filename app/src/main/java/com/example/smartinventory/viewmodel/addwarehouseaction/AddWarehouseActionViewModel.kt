@@ -30,7 +30,10 @@ class AddWarehouseActionViewModel @Inject constructor(
             if (query.isBlank()) {
                 actions
             } else {
-                actions.filter { it.name.contains(query, ignoreCase = true) }
+                actions.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                    it.ean.contains(query, ignoreCase = true)
+                }
             }
         }}
 

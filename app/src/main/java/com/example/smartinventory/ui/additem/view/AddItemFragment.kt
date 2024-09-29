@@ -107,7 +107,7 @@ class AddItemFragment : Fragment() {
             supplier = supplier,
             reorderLevel = reorderLevel,
             unitPrice = unitPrice,
-            ean = ean,
+            ean = ean.toString(),
             expiryDate = currentItem?.expiryDate ?: Date(),
             imageUrl = currentItem?.imageUrl ?: "https://via.placeholder.com/150"
         )

@@ -1,233 +1,375 @@
 package com.example.smartinventory.ui.addwarehouseitem.view
 
-import android.app.Activity
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.lifecycleScope
-import com.example.smartinventory.data.model.InventoryItem
-import com.example.smartinventory.viewmodel.addwarehouseaction.AddWarehouseActionViewModel
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
+import androidx.compose.foundation.text.KeyboardOptions.Companion
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AddWarehouseItemFragment @Inject constructor(
-):  Fragment() {
-
-    companion object {
-        private const val CAMERA_REQUEST_CODE = 1001
-    }
+class AddWarehouseItemFragment @Inject constructor() : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-                    if (bitmap != null) {
-                        val image = InputImage.fromBitmap(bitmap, 0)
-                        scanBarcodes(image) { barcodes ->
-                            if (barcodes.isNotEmpty()) {
-                                val barcodeResult = barcodes.first().rawValue.orEmpty()
-                                Log.d("AddWarehouseItemFragment", "Barcode detected: $barcodeResult")
-                                // Update the UI or handle the result as needed
-                            }
-                        }
-                    }
-                }
-
-                AddWarehouseItemScreenWithViewModel(
-                    viewModel = hiltViewModel(),
-                    onItemClicked = { item ->
-                        Log.d("AddWarehouseItemFragment", "Item clicked: ${item.name}")
-                    },
-                    onCaptureButtonClick = {
-                        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                            launcher.launch(null)
-                        } else {
-                            ActivityCompat.requestPermissions(activity as Activity, arrayOf(android.Manifest.permission.CAMERA), CAMERA_REQUEST_CODE)
-                        }
-                    },
-                )
-            }
-        }
-    }
-    private fun scanBarcodes(image: InputImage, onSuccess: (List<Barcode>) -> Unit) {
-        val options = BarcodeScannerOptions.Builder().setBarcodeFormats(
-            Barcode.FORMAT_CODE_128
-        ).build()
-        val scanner =
-            BarcodeScanning.getClient(options)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-           scanner.process(image)
-                .addOnSuccessListener { barcodes ->
-                    onSuccess(barcodes)
-                }
-                .addOnFailureListener { e ->
-                    Log.e("BarcodeScan", "Barcode scanning failed", e)
-                }
-        }
-    }
-}
-
-
-@Composable
-fun AddWarehouseItemScreen(
-    filterText: String,
-    onFilterTextChange: (String) -> Unit,
-    onScanBarcodeClick: () -> Unit,
-    items: List<InventoryItem>,
-    onItemClicked: (InventoryItem) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Search TextField
-        OutlinedTextField(
-            value = filterText,
-            onValueChange = onFilterTextChange,
-            label = { Text("Search Items") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Scan Barcode Button
-        Button(
-            onClick = onScanBarcodeClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Scan Barcode")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Display List of Items
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(items) { item ->
-                WarehouseItemRow(item = item, onItemClicked = onItemClicked)
+                AddWarehouseItemScreen()
             }
         }
     }
 }
 
-@Composable
-fun WarehouseItemRow(item: InventoryItem, onItemClicked: (InventoryItem) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onItemClicked(item) }
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(text = item.name, style = MaterialTheme.typography.bodyLarge)
-            Text(text = "Type: ${item.category}", style = MaterialTheme.typography.bodySmall)
-            Text(text = "Quantity: ${item.quantity}", style = MaterialTheme.typography.bodySmall)
-            Text(text = "Barcode: ${item.ean}", style = MaterialTheme.typography.bodySmall)
-        }
-    }
+data class NewWarehouseItem(
+    val id: Int, // Unique identifier
+    var name: String,
+    var quantity: Int,
+    var price: Double
+)
+
+enum class WarehouseActionType {
+    INBOUND,
+    OUTBOUND
 }
 
+enum class WarehouseActionStatus {
+    DRAFT,
+    COMPLETED
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddWarehouseItemScreenWithViewModel(
-    viewModel: AddWarehouseActionViewModel,
-    onItemClicked: (InventoryItem) -> Unit = {},
-    onCaptureButtonClick: () -> Unit,
+fun AddWarehouseItemScreen() {
+    // Warehouse Action Details State
+    var actionName by remember { mutableStateOf("") }
+    var actionType by remember { mutableStateOf(WarehouseActionType.INBOUND) }
+    var actionStatus by remember { mutableStateOf(WarehouseActionStatus.DRAFT) }
 
-    ) {
-    val filterText by viewModel.filterQuery.observeAsState("")
-    val items by viewModel.filteredInventoryItem.observeAsState(emptyList())
+    // New Item Input Fields State
+    var itemName by remember { mutableStateOf("") }
+    var itemQuantity by remember { mutableStateOf("") }
+    var itemPrice by remember { mutableStateOf("") }
 
+    // State list for added items
+    var itemIdCounter by remember { mutableStateOf(0) } // To assign unique IDs
+    val addedItems = remember { mutableStateListOf<NewWarehouseItem>() }
+
+    // State for Editing Items
+    var isEditing by remember { mutableStateOf(false) }
+    var editingItem: NewWarehouseItem? by remember { mutableStateOf(null) }
+
+    // Context for Toasts
     val context = LocalContext.current
 
-    // Define the Filter Text Change Handler
-    val onFilterTextChange: (String) -> Unit = { query ->
-        viewModel.filterItems(query)
-    }
+    // Single LazyColumn to handle all scrollable content
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // **Warehouse Action Details Section**
+        item {
+            Text(
+                text = "Warehouse Action Details",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-    AddWarehouseItemScreen(
-        filterText = filterText,
-        onFilterTextChange = onFilterTextChange,
-        onScanBarcodeClick = onCaptureButtonClick,
-        items = items,
-        onItemClicked = onItemClicked
-    )
+            OutlinedTextField(
+                value = actionName,
+                onValueChange = { actionName = it },
+                label = { Text("Action Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Warehouse Action Type Dropdown
+            var expandedType by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expandedType,
+                onExpandedChange = { expandedType = !expandedType }
+            ) {
+                OutlinedTextField(
+                    value = actionType.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Action Type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedType,
+                    onDismissRequest = { expandedType = false }
+                ) {
+                    WarehouseActionType.values().forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.name) },
+                            onClick = {
+                                actionType = type
+                                expandedType = false
+                            }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Warehouse Action Status Dropdown
+            var expandedStatus by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expandedStatus,
+                onExpandedChange = { expandedStatus = !expandedStatus }
+            ) {
+                OutlinedTextField(
+                    value = actionStatus.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Action Status") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedStatus,
+                    onDismissRequest = { expandedStatus = false }
+                ) {
+                    WarehouseActionStatus.values().forEach { status ->
+                        DropdownMenuItem(
+                            text = { Text(status.name) },
+                            onClick = {
+                                actionStatus = status
+                                expandedStatus = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+
+        // **Add New Item Section**
+        item {
+            Text(
+                text = if (isEditing) "Edit Item" else "Add New Item",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = itemName,
+                onValueChange = { itemName = it },
+                label = { Text("Item Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = itemQuantity,
+                onValueChange = { itemQuantity = it },
+                label = { Text("Item Quantity") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = itemPrice,
+                onValueChange = { itemPrice = it },
+                label = { Text("Item Price") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Add or Update Item Button
+            Button(
+                onClick = {
+                    // Validate inputs
+                    val quantity = itemQuantity.toIntOrNull()
+                    val price = itemPrice.toDoubleOrNull()
+
+                    if (actionName.isBlank()) {
+                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    if (itemName.isBlank() || quantity == null || price == null) {
+                        Toast.makeText(context, "Please enter valid item details", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    if (isEditing && editingItem != null) {
+                        // Update existing item
+                        editingItem!!.name = itemName
+                        editingItem!!.quantity = quantity
+                        editingItem!!.price = price
+                        // Trigger recomposition
+                        val index = addedItems.indexOf(editingItem!!)
+                        if (index != -1) {
+                            addedItems[index] = editingItem!!
+                        }
+                        isEditing = false
+                        editingItem = null
+                        Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // Add new item
+                        val newItem = NewWarehouseItem(
+                            id = itemIdCounter++,
+                            name = itemName,
+                            quantity = quantity,
+                            price = price
+                        )
+                        addedItems.add(newItem)
+                        Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Reset input fields
+                    itemName = ""
+                    itemQuantity = ""
+                    itemPrice = ""
+                },
+            ) {
+                Text(if (isEditing) "Update Item" else "Add Item")
+            }
+        }
+
+
+        // **Added Items List Section**
+        item {
+            Text(
+                text = "Added Items",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (addedItems.isEmpty()) {
+                Text("No items added yet.", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        // Display Added Items
+        items(addedItems, key = { it.id }) { item ->
+            ItemRow(
+                item = item,
+                onEdit = {
+                    isEditing = true
+                    editingItem = it
+                    // Populate input fields with existing item data
+                    itemName = it.name
+                    itemQuantity = it.quantity.toString()
+                    itemPrice = it.price.toString()
+                },
+                onDelete = {
+                    addedItems.remove(it)
+                    Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+
+        // **Submit All Details Button**
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (actionName.isBlank()) {
+                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    if (addedItems.isEmpty()) {
+                        Toast.makeText(context, "Add at least one item", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    // Handle submission logic here
+                    // Example: Pass the WarehouseAction and addedItems to ViewModel or another component
+
+                    // For demonstration, show a Toast
+                    Toast.makeText(
+                        context,
+                        "Action \"$actionName\" with ${addedItems.size} items submitted",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    // Reset all fields after submission
+                    actionName = ""
+                    actionType = WarehouseActionType.INBOUND
+                    actionStatus = WarehouseActionStatus.DRAFT
+                    addedItems.clear()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text("Submit All Details")
+            }
+        }
+    }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddWarehouseItemScreenPreview() {
-    val sampleItems = listOf(
-        InventoryItem(
-            name = "Sample Item 1",
-            category = "Sample Category A",
-            quantity = 20,
-            ean = 11122,
-            expiryDate = Date(),
-            imageUrl = null,
-            sku = "SKU-001",
-            supplier = "Supplier X",
-            reorderLevel = 5,
-            unitPrice = 99.99
-        ),
-        InventoryItem(
-            name = "Sample Item 2",
-            category = "Sample Category B",
-            quantity = 30,
-            ean = 55566,
-            expiryDate = Date(),
-            imageUrl = null,
-            sku = "SKU-002",
-            supplier = "Supplier Y",
-            reorderLevel = 10,
-            unitPrice = 149.99
-        )
-    )
+fun ItemRow(
+    item: NewWarehouseItem,
+    onEdit: (NewWarehouseItem) -> Unit,
+    onDelete: (NewWarehouseItem) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Item Details
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(text = "Name: ${item.name}", style = MaterialTheme.typography.bodyLarge)
+                Text(text = "Quantity: ${item.quantity}", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "Price: \$${item.price}", style = MaterialTheme.typography.bodyMedium)
+            }
 
-    AddWarehouseItemScreen(
-        filterText = "",
-        onFilterTextChange = {},
-        onScanBarcodeClick = {},
-        items = sampleItems,
-        onItemClicked = {}
-    )
+            // Edit and Delete Buttons
+            Row {
+                IconButton(onClick = { onEdit(item) }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Item"
+                    )
+                }
+                IconButton(onClick = { onDelete(item) }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Item"
+                    )
+                }
+            }
+        }
+    }
 }

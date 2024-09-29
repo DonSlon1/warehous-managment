@@ -12,7 +12,7 @@ data class InventoryItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val name: String,
     val sku: String,
-    val ean: Int,
+    val ean: String,
     val category: String,
     val quantity: Int,
     val supplier: String,
