@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -17,8 +18,10 @@
     <fragment
         android:id="@+id/navAddWarehouseItemFragment"
         android:name="com.example.smartinventory.ui.addwarehouseitem.view.AddWarehouseItemFragment"
-        android:label="@string/add_warehouse_item"
-        tools:layout="@layout/fragment_add_warehouse_item" >
+        android:label="@string/add_warehouse_item">
+        <action
+            android:id="@+id/action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment"
+            app:destination="@id/filterInventoryItemsFragment" />
         <action
             android:id="@+id/action_navAddWarehouseItemFragment_to_warehouseActionFragment"
             app:destination="@id/warehouseActionFragment" />
@@ -37,17 +40,25 @@
     <fragment
         android:id="@+id/navAddItemFragment"
         android:name="com.example.smartinventory.ui.additem.view.AddItemFragment"
-        android:label="@string/add_item"
-        tools:layout="@layout/fragment_add_item">
+        android:label="@string/add_item">
         <argument
-            android:id="@+id/existingItem"
             android:name="inventoryItem"
             app:argType="com.example.smartinventory.data.model.InventoryItem"
             app:nullable="true"
-            android:defaultValue="@null" />
+            android:defaultValue="@null"
+            />
         <action
             android:id="@+id/action_addItemFragment_to_mainFragment"
             app:destination="@id/itemFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/filterInventoryItemsFragment"
+        android:name="com.example.smartinventory.ui.items.FilterInventoryItems"
+        android:label="Filter Inventory Items" >
+        <action
+            android:id="@+id/action_filterInventoryItemsFragment_to_navAddWarehouseItemFragment"
+            app:destination="@id/navAddWarehouseItemFragment" />
     </fragment>
 
 </navigation>

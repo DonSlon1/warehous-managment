@@ -22,18 +22,48 @@ import androidx.fragment.app.Fragment
 import androidx.compose.foundation.text.KeyboardOptions.Companion
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
+import com.example.smartinventory.R
+import com.example.smartinventory.data.model.InventoryItem
+import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.runtime.livedata.observeAsState
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AddWarehouseItemFragment @Inject constructor() : Fragment() {
+class AddWarehouseItemFragment : Fragment() {
+
+    private val sharedViewModel: AddWarehouseSharedViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                AddWarehouseItemScreen()
+                AddWarehouseItemScreen(
+                    onSelectItemsClick = {
+                        // Navigate to FilterInventoryItems
+                        findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment)
+                    },
+                    onSubmitClick = { actionDetails ->
+                        // Handle submission logic here, e.g., save to database
+                        // actionDetails includes selected items from sharedViewModel
+
+                        val selectedItems = sharedViewModel.selectedItems.value ?: emptyList()
+
+                        // Example: Display a toast with selected items count
+                        Toast.makeText(
+                            context,
+                            "Submitted action '${actionDetails.actionName}' with ${selectedItems.size} items",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                        // Optionally, navigate back or reset fields
+                        findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
+                    },
+                    selectedItems = sharedViewModel.selectedItems.observeAsState(initial = emptyList()).value
+                )
             }
         }
     }
@@ -58,275 +88,137 @@ enum class WarehouseActionStatus {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddWarehouseItemScreen() {
-    // Warehouse Action Details State
+fun AddWarehouseItemScreen(
+    onSelectItemsClick: () -> Unit,
+    onSubmitClick: (ActionDetails) -> Unit,
+    selectedItems: List<InventoryItem>
+) {
     var actionName by remember { mutableStateOf("") }
-    var actionType by remember { mutableStateOf(WarehouseActionType.INBOUND) }
-    var actionStatus by remember { mutableStateOf(WarehouseActionStatus.DRAFT) }
+    var actionType by remember { mutableStateOf("INBOUND") }
+    var actionStatus by remember { mutableStateOf("DRAFT") }
 
-    // New Item Input Fields State
-    var itemName by remember { mutableStateOf("") }
-    var itemQuantity by remember { mutableStateOf("") }
-    var itemPrice by remember { mutableStateOf("") }
-
-    // State list for added items
-    var itemIdCounter by remember { mutableStateOf(0) } // To assign unique IDs
-    val addedItems = remember { mutableStateListOf<NewWarehouseItem>() }
-
-    // State for Editing Items
-    var isEditing by remember { mutableStateOf(false) }
-    var editingItem: NewWarehouseItem? by remember { mutableStateOf(null) }
-
-    // Context for Toasts
-    val context = LocalContext.current
-
-    // Single LazyColumn to handle all scrollable content
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // **Warehouse Action Details Section**
-        item {
-            Text(
-                text = "Warehouse Action Details",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Add Warehouse Action", style = MaterialTheme.typography.titleLarge)
 
+        OutlinedTextField(
+            value = actionName,
+            onValueChange = { actionName = it },
+            label = { Text("Action Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Action Type Dropdown
+        var expandedType by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = expandedType,
+            onExpandedChange = { expandedType = !expandedType }
+        ) {
             OutlinedTextField(
-                value = actionName,
-                onValueChange = { actionName = it },
-                label = { Text("Action Name") },
+                value = actionType,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Action Type") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Warehouse Action Type Dropdown
-            var expandedType by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
+            ExposedDropdownMenu(
                 expanded = expandedType,
-                onExpandedChange = { expandedType = !expandedType }
+                onDismissRequest = { expandedType = false }
             ) {
-                OutlinedTextField(
-                    value = actionType.name,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Action Type") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedType,
-                    onDismissRequest = { expandedType = false }
-                ) {
-                    WarehouseActionType.values().forEach { type ->
-                        DropdownMenuItem(
-                            text = { Text(type.name) },
-                            onClick = {
-                                actionType = type
-                                expandedType = false
-                            }
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Warehouse Action Status Dropdown
-            var expandedStatus by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = expandedStatus,
-                onExpandedChange = { expandedStatus = !expandedStatus }
-            ) {
-                OutlinedTextField(
-                    value = actionStatus.name,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Action Status") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedStatus,
-                    onDismissRequest = { expandedStatus = false }
-                ) {
-                    WarehouseActionStatus.values().forEach { status ->
-                        DropdownMenuItem(
-                            text = { Text(status.name) },
-                            onClick = {
-                                actionStatus = status
-                                expandedStatus = false
-                            }
-                        )
-                    }
+                listOf("INBOUND", "OUTBOUND").forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(type) },
+                        onClick = {
+                            actionType = type
+                            expandedType = false
+                        }
+                    )
                 }
             }
         }
 
-
-        // **Add New Item Section**
-        item {
-            Text(
-                text = if (isEditing) "Edit Item" else "Add New Item",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
+        // Action Status Dropdown
+        var expandedStatus by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = expandedStatus,
+            onExpandedChange = { expandedStatus = !expandedStatus }
+        ) {
             OutlinedTextField(
-                value = itemName,
-                onValueChange = { itemName = it },
-                label = { Text("Item Name") },
+                value = actionStatus,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Action Status") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = itemQuantity,
-                onValueChange = { itemQuantity = it },
-                label = { Text("Item Quantity") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = itemPrice,
-                onValueChange = { itemPrice = it },
-                label = { Text("Item Price") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Add or Update Item Button
-            Button(
-                onClick = {
-                    // Validate inputs
-                    val quantity = itemQuantity.toIntOrNull()
-                    val price = itemPrice.toDoubleOrNull()
-
-                    if (actionName.isBlank()) {
-                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-
-                    if (itemName.isBlank() || quantity == null || price == null) {
-                        Toast.makeText(context, "Please enter valid item details", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-
-                    if (isEditing && editingItem != null) {
-                        // Update existing item
-                        editingItem!!.name = itemName
-                        editingItem!!.quantity = quantity
-                        editingItem!!.price = price
-                        // Trigger recomposition
-                        val index = addedItems.indexOf(editingItem!!)
-                        if (index != -1) {
-                            addedItems[index] = editingItem!!
-                        }
-                        isEditing = false
-                        editingItem = null
-                        Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
-                    } else {
-                        // Add new item
-                        val newItem = NewWarehouseItem(
-                            id = itemIdCounter++,
-                            name = itemName,
-                            quantity = quantity,
-                            price = price
-                        )
-                        addedItems.add(newItem)
-                        Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
-                    }
-
-                    // Reset input fields
-                    itemName = ""
-                    itemQuantity = ""
-                    itemPrice = ""
-                },
+            ExposedDropdownMenu(
+                expanded = expandedStatus,
+                onDismissRequest = { expandedStatus = false }
             ) {
-                Text(if (isEditing) "Update Item" else "Add Item")
-            }
-        }
-
-
-        // **Added Items List Section**
-        item {
-            Text(
-                text = "Added Items",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (addedItems.isEmpty()) {
-                Text("No items added yet.", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-
-        // Display Added Items
-        items(addedItems, key = { it.id }) { item ->
-            ItemRow(
-                item = item,
-                onEdit = {
-                    isEditing = true
-                    editingItem = it
-                    // Populate input fields with existing item data
-                    itemName = it.name
-                    itemQuantity = it.quantity.toString()
-                    itemPrice = it.price.toString()
-                },
-                onDelete = {
-                    addedItems.remove(it)
-                    Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
+                listOf("DRAFT", "COMPLETED").forEach { status ->
+                    DropdownMenuItem(
+                        text = { Text(status) },
+                        onClick = {
+                            actionStatus = status
+                            expandedStatus = false
+                        }
+                    )
                 }
-            )
+            }
         }
 
-        // **Submit All Details Button**
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    if (actionName.isBlank()) {
-                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-
-                    if (addedItems.isEmpty()) {
-                        Toast.makeText(context, "Add at least one item", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-
-                    // Handle submission logic here
-                    // Example: Pass the WarehouseAction and addedItems to ViewModel or another component
-
-                    // For demonstration, show a Toast
-                    Toast.makeText(
-                        context,
-                        "Action \"$actionName\" with ${addedItems.size} items submitted",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    // Reset all fields after submission
-                    actionName = ""
-                    actionType = WarehouseActionType.INBOUND
-                    actionStatus = WarehouseActionStatus.DRAFT
-                    addedItems.clear()
-                },
+        // Selected Items Section
+        Text(text = "Selected Items:", style = MaterialTheme.typography.titleMedium)
+        if (selectedItems.isEmpty()) {
+            Text("No items selected.")
+        } else {
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(150.dp)
             ) {
-                Text("Submit All Details")
+                items(selectedItems) { item ->
+                    Text("- ${item.name} (${item.quantity})")
+                }
             }
+        }
+
+        // Select Items Button
+        Button(
+            onClick = onSelectItemsClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Select Items")
+        }
+
+        // Submit Action Button
+        Button(
+            onClick = {
+                onSubmitClick(
+                    ActionDetails(
+                        actionName = actionName,
+                        actionType = actionType,
+                        actionStatus = actionStatus
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Submit Action")
         }
     }
 }
+
+data class ActionDetails(
+    val actionName: String,
+    val actionType: String,
+    val actionStatus: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
