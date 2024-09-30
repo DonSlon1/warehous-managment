@@ -173,14 +173,14 @@ fun AddWarehouseItemScreen(
         }
 
         // Selected Items Section
-        Text(text = "Selected Items:", style = MaterialTheme.typography.titleMedium)
+        Text(text = "Added Items:", style = MaterialTheme.typography.titleMedium)
         if (selectedItems.isEmpty()) {
-            Text("No items selected.")
+            Text("No items added.")
         } else {
             LazyColumn(
                 modifier = Modifier
+                    .heightIn(min = 0.dp, max = 200.dp)
                     .fillMaxWidth()
-                    .height(200.dp)
             ) {
                 items(selectedItems) { item ->
                     val newWarehouseItem = NewWarehouseItem(
