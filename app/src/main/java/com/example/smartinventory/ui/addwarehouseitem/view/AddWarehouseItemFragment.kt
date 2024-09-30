@@ -126,8 +126,42 @@ fun AddWarehouseItemScreen(
     var isEditing by remember { mutableStateOf(false) }
     var editingItem: NewWarehouseItem? by remember { mutableStateOf(null) }
 
+    // **Processing Selected Items**
+    var processingSelectedItems by remember { mutableStateOf(listOf<InventoryItem>()) }
+    var currentProcessingItem by remember { mutableStateOf<NewWarehouseItem?>(null) }
+
     // **Context for Toasts**
     val context = LocalContext.current
+
+    // **Effect to handle selectedItems updates**
+    LaunchedEffect(selectedItems) {
+        if (selectedItems.isNotEmpty()) {
+            // Add new selected items to the processing queue, avoiding duplicates
+            processingSelectedItems =
+                processingSelectedItems + selectedItems.filter { selectedItem ->
+                    // Check if the selectedItem is already in the queue or already added
+                    addedItems.none { it.id == selectedItem.id.toInt() } &&
+                            processingSelectedItems.none { it.id == selectedItem.id }
+                }
+        }
+    }
+
+    // **Effect to load next selected item into input fields**
+    LaunchedEffect(processingSelectedItems, currentProcessingItem) {
+        if (currentProcessingItem == null && processingSelectedItems.isNotEmpty()) {
+            val nextItem = processingSelectedItems.first()
+            currentProcessingItem = NewWarehouseItem(
+                id = nextItem.id.toInt(), // Ensure id is Int
+                name = nextItem.name,
+                quantity = nextItem.quantity,
+                price = nextItem.unitPrice
+            )
+            // Pre-fill input fields
+            itemName = nextItem.name
+            itemQuantity = nextItem.quantity.toString()
+            itemPrice = nextItem.unitPrice.toString()
+        }
+    }
 
     // **Main Scrollable Container**
     LazyColumn(
@@ -214,10 +248,14 @@ fun AddWarehouseItemScreen(
             }
         }
 
-        // **Manual Item Addition Section**
+        // **Manual (or Selected) Item Addition Section**
         item {
             Text(
-                text = if (isEditing) "Edit Item" else "Add New Item",
+                text = when {
+                    isEditing -> "Edit Item"
+                    currentProcessingItem != null -> "Add Selected Item"
+                    else -> "Add New Item"
+                },
                 style = MaterialTheme.typography.titleLarge
             )
         }
@@ -281,11 +319,11 @@ fun AddWarehouseItemScreen(
                     }
 
                     if (isEditing && editingItem != null) {
-                        // Update existing item
+                        // **Case 1: Updating an Existing Manually Added Item**
                         editingItem!!.name = itemName
                         editingItem!!.quantity = quantity
                         editingItem!!.price = price
-                        // Trigger recomposition by updating the list
+                        // Update the item in the list to trigger recomposition
                         val index = addedItems.indexOf(editingItem!!)
                         if (index != -1) {
                             addedItems[index] = editingItem!!
@@ -293,8 +331,25 @@ fun AddWarehouseItemScreen(
                         isEditing = false
                         editingItem = null
                         Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
+                    } else if (currentProcessingItem != null) {
+                        // **Case 2: Adding a Selected Item**
+                        val updatedItem = NewWarehouseItem(
+                            id = currentProcessingItem!!.id, // Keep the existing ID
+                            name = itemName,
+                            quantity = quantity,
+                            price = price
+                        )
+                        addedItems.add(updatedItem)
+                        Toast.makeText(context, "Selected item added", Toast.LENGTH_SHORT).show()
+                        // Remove the processed item from the queue
+                        processingSelectedItems = processingSelectedItems.drop(1)
+                        currentProcessingItem = null
+                        // Reset input fields
+                        itemName = ""
+                        itemQuantity = ""
+                        itemPrice = ""
                     } else {
-                        // Add new item
+                        // **Case 3: Adding a New Manually Entered Item**
                         val newItem = NewWarehouseItem(
                             id = itemIdCounter++,
                             name = itemName,
@@ -303,16 +358,22 @@ fun AddWarehouseItemScreen(
                         )
                         addedItems.add(newItem)
                         Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
+                        // Reset input fields
+                        itemName = ""
+                        itemQuantity = ""
+                        itemPrice = ""
                     }
 
-                    // Reset input fields
-                    itemName = ""
-                    itemQuantity = ""
-                    itemPrice = ""
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isEditing) "Update Item" else "Add Item")
+                Text(
+                    text = when {
+                        isEditing -> "Update Item"
+                        currentProcessingItem != null -> "Add Selected Item"
+                        else -> "Add Item"
+                    }
+                )
             }
         }
 
@@ -339,53 +400,11 @@ fun AddWarehouseItemScreen(
             Text(text = "Added Items:", style = MaterialTheme.typography.titleMedium)
         }
 
-        // **Display Selected Items**
-        if (selectedItems.isNotEmpty()) {
+        if (addedItems.isEmpty()) {
             item {
-                Text(
-                    text = "Selected Items:",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                Text("No items added.")
             }
-            items(selectedItems) { item ->
-                val newWarehouseItem = NewWarehouseItem(
-                    id = item.id.toInt(), // Ensure id is Int
-                    name = item.name,
-                    quantity = item.quantity,
-                    price = item.unitPrice
-                )
-                ItemRow(
-                    item = newWarehouseItem,
-                    onEdit = {
-                        Toast.makeText(
-                            context,
-                            "Editing selected items not supported.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    },
-                    onDelete = {
-                        Toast.makeText(
-                            context,
-                            "Deletion of selected items not supported.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    },
-                    isSelectable = false // Prevent editing/deleting selected items
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-        }
-
-        // **Display Manually Added Items**
-        if (addedItems.isNotEmpty()) {
-            item {
-                Text(
-                    text = "Manually Added Items:",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
+        } else {
             items(addedItems, key = { it.id }) { item ->
                 ItemRow(
                     item = item,
@@ -421,7 +440,7 @@ fun AddWarehouseItemScreen(
                         return@Button
                     }
 
-                    if (selectedItems.isEmpty() && addedItems.isEmpty()) {
+                    if (addedItems.isEmpty()) {
                         Toast.makeText(context, "Add at least one item", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
@@ -443,7 +462,6 @@ fun AddWarehouseItemScreen(
             }
         }
     }
-
 }
 
 @Composable
