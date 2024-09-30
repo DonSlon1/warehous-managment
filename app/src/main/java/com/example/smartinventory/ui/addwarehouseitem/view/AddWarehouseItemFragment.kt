@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
-import androidx.compose.foundation.text.KeyboardOptions.Companion
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.fragment.app.activityViewModels
@@ -28,7 +27,8 @@ import com.example.smartinventory.R
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.collectAsState
 
 @AndroidEntryPoint
 class AddWarehouseItemFragment : Fragment() {
@@ -49,7 +49,8 @@ class AddWarehouseItemFragment : Fragment() {
                         // Handle submission logic here, e.g., save to database
                         // actionDetails includes selected items from sharedViewModel and addedItems from manual input
 
-                        val selectedItems = sharedViewModel.selectedItems.value ?: emptyList()
+/*
+                        val selectedItems = sharedViewModel.selectedItem.value ?: emptyList()
 
                         // Combine selectedItems and addedItems into one list
                         val allItems = selectedItems.map { selectedItem ->
@@ -60,18 +61,29 @@ class AddWarehouseItemFragment : Fragment() {
                                 price = selectedItem.unitPrice
                             )
                         } + addedItems
+*/
 
                         // Example: Display a toast with total items count
                         Toast.makeText(
                             context,
-                            "Submitted action '${actionDetails.actionName}' with ${allItems.size} items",
+                            "Submitted action '${actionDetails.actionName}' with {allItems.size} items",
                             Toast.LENGTH_LONG
                         ).show()
 
                         // Optionally, navigate back or reset fields
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
                     },
-                    selectedItems = sharedViewModel.selectedItems.observeAsState(initial = emptyList()).value
+                    selectedItem = sharedViewModel.selectedItem.collectAsState(initial = null),
+                    actionName = sharedViewModel.actionName.collectAsState(initial = ""),
+                    actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND),
+                    actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT),
+                    addedItems = sharedViewModel.addedItems.collectAsState(initial = mutableListOf()),
+                    onActionNameChange = { sharedViewModel.setActionName(it) },
+                    onActionTypeChange = { sharedViewModel.setActionType(it) },
+                    onActionStatusChange = { sharedViewModel.setActionStatus(it) },
+                    onAddItem = { item -> sharedViewModel.addItem(item) },
+                    onUpdateItem = { item -> sharedViewModel.updateItem(item) },
+                    onRemoveItem = { item -> sharedViewModel.removeItem(item) }
                 )
             }
         }
@@ -106,63 +118,49 @@ data class ActionDetails(
 fun AddWarehouseItemScreen(
     onSelectItemsClick: () -> Unit,
     onSubmitClick: (ActionDetails, List<NewWarehouseItem>) -> Unit,
-    selectedItems: List<InventoryItem>
+    selectedItem: State<InventoryItem?>,
+    actionName: State<String>,
+    actionType: State<Enum<*>>,
+    actionStatus: State<Enum<*>>,
+    addedItems: State<MutableList<NewWarehouseItem>>,
+    onActionNameChange: (String) -> Unit,
+    onActionTypeChange: (WarehouseActionType) -> Unit,
+    onActionStatusChange: (WarehouseActionStatus) -> Unit,
+    onAddItem: (NewWarehouseItem) -> Unit,
+    onUpdateItem: (NewWarehouseItem) -> Unit,
+    onRemoveItem: (NewWarehouseItem) -> Unit
 ) {
-    // **Warehouse Action Details State**
-    var actionName by remember { mutableStateOf("") }
-    var actionType by remember { mutableStateOf(WarehouseActionType.INBOUND) }
-    var actionStatus by remember { mutableStateOf(WarehouseActionStatus.DRAFT) }
-
     // **New Item Input Fields State**
-    var itemName by remember { mutableStateOf("") }
-    var itemQuantity by remember { mutableStateOf("") }
-    var itemPrice by remember { mutableStateOf("") }
+    var itemName by rememberSaveable { mutableStateOf("") }
+    var itemQuantity by rememberSaveable { mutableStateOf("") }
+    var itemPrice by rememberSaveable { mutableStateOf("") }
 
     // **State list for manually added items**
-    var itemIdCounter by remember { mutableStateOf(0) } // To assign unique IDs
-    val addedItems = remember { mutableStateListOf<NewWarehouseItem>() }
+    var itemIdCounter by rememberSaveable { mutableStateOf(0) } // To assign unique IDs
 
     // **State for Editing Items**
-    var isEditing by remember { mutableStateOf(false) }
-    var editingItem: NewWarehouseItem? by remember { mutableStateOf(null) }
-
-    // **Processing Selected Items**
-    var processingSelectedItems by remember { mutableStateOf(listOf<InventoryItem>()) }
+    var isEditing by rememberSaveable { mutableStateOf(false) }
+    var editingItem: NewWarehouseItem? by rememberSaveable { mutableStateOf(null) }
     var currentProcessingItem by remember { mutableStateOf<NewWarehouseItem?>(null) }
 
     // **Context for Toasts**
     val context = LocalContext.current
 
-    // **Effect to handle selectedItems updates**
-    LaunchedEffect(selectedItems) {
-        if (selectedItems.isNotEmpty()) {
-            // Add new selected items to the processing queue, avoiding duplicates
-            processingSelectedItems =
-                processingSelectedItems + selectedItems.filter { selectedItem ->
-                    // Check if the selectedItem is already in the queue or already added
-                    addedItems.none { it.id == selectedItem.id.toInt() } &&
-                            processingSelectedItems.none { it.id == selectedItem.id }
-                }
-        }
-    }
-
     // **Effect to load next selected item into input fields**
-    LaunchedEffect(processingSelectedItems, currentProcessingItem) {
-        if (currentProcessingItem == null && processingSelectedItems.isNotEmpty()) {
-            val nextItem = processingSelectedItems.first()
-            currentProcessingItem = NewWarehouseItem(
-                id = nextItem.id.toInt(), // Ensure id is Int
-                name = nextItem.name,
-                quantity = nextItem.quantity,
-                price = nextItem.unitPrice
-            )
-            // Pre-fill input fields
-            itemName = nextItem.name
-            itemQuantity = nextItem.quantity.toString()
-            itemPrice = nextItem.unitPrice.toString()
-        }
+    LaunchedEffect(selectedItem) {
+            selectedItem.value?.let {
+                currentProcessingItem = NewWarehouseItem(
+                    id = it.id.toInt(), // Ensure id is Int
+                    name = it.name,
+                    quantity = it.quantity,
+                    price = it.unitPrice
+                )
+                // Pre-fill input fields
+                itemName = it.name
+                itemQuantity = it.quantity.toString()
+                itemPrice = it.unitPrice.toString()
+            }
     }
-
     // **Main Scrollable Container**
     LazyColumn(
         modifier = Modifier
@@ -177,8 +175,8 @@ fun AddWarehouseItemScreen(
 
         item {
             OutlinedTextField(
-                value = actionName,
-                onValueChange = { actionName = it },
+                value = actionName.value,
+                onValueChange = { onActionNameChange(it) },
                 label = { Text("Action Name") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -192,7 +190,7 @@ fun AddWarehouseItemScreen(
                 onExpandedChange = { expandedType = !expandedType }
             ) {
                 OutlinedTextField(
-                    value = actionType.name,
+                    value = actionType.value.name,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Action Type") },
@@ -207,7 +205,7 @@ fun AddWarehouseItemScreen(
                         DropdownMenuItem(
                             text = { Text(type.name) },
                             onClick = {
-                                actionType = type
+                                onActionTypeChange(type)
                                 expandedType = false
                             }
                         )
@@ -224,7 +222,7 @@ fun AddWarehouseItemScreen(
                 onExpandedChange = { expandedStatus = !expandedStatus }
             ) {
                 OutlinedTextField(
-                    value = actionStatus.name,
+                    value = actionStatus.value.name,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Action Status") },
@@ -239,7 +237,7 @@ fun AddWarehouseItemScreen(
                         DropdownMenuItem(
                             text = { Text(status.name) },
                             onClick = {
-                                actionStatus = status
+                                onActionStatusChange(status)
                                 expandedStatus = false
                             }
                         )
@@ -253,7 +251,7 @@ fun AddWarehouseItemScreen(
             Text(
                 text = when {
                     isEditing -> "Edit Item"
-                    currentProcessingItem != null -> "Add Selected Item"
+                    // Add logic if you're processing selected items
                     else -> "Add New Item"
                 },
                 style = MaterialTheme.typography.titleLarge
@@ -303,7 +301,7 @@ fun AddWarehouseItemScreen(
                     val quantity = itemQuantity.toIntOrNull()
                     val price = itemPrice.toDoubleOrNull()
 
-                    if (actionName.isBlank()) {
+                    if (actionName.value.isBlank()) {
                         Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT)
                             .show()
                         return@Button
@@ -320,59 +318,36 @@ fun AddWarehouseItemScreen(
 
                     if (isEditing && editingItem != null) {
                         // **Case 1: Updating an Existing Manually Added Item**
-                        editingItem!!.name = itemName
-                        editingItem!!.quantity = quantity
-                        editingItem!!.price = price
-                        // Update the item in the list to trigger recomposition
-                        val index = addedItems.indexOf(editingItem!!)
-                        if (index != -1) {
-                            addedItems[index] = editingItem!!
-                        }
-                        isEditing = false
-                        editingItem = null
-                        Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
-                    } else if (currentProcessingItem != null) {
-                        // **Case 2: Adding a Selected Item**
-                        val updatedItem = NewWarehouseItem(
-                            id = currentProcessingItem!!.id, // Keep the existing ID
+                        val updatedItem = editingItem!!.copy(
                             name = itemName,
                             quantity = quantity,
                             price = price
                         )
-                        addedItems.add(updatedItem)
-                        Toast.makeText(context, "Selected item added", Toast.LENGTH_SHORT).show()
-                        // Remove the processed item from the queue
-                        processingSelectedItems = processingSelectedItems.drop(1)
-                        currentProcessingItem = null
-                        // Reset input fields
-                        itemName = ""
-                        itemQuantity = ""
-                        itemPrice = ""
+                        onUpdateItem(updatedItem)
+                        isEditing = false
+                        editingItem = null
+                        Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
                     } else {
-                        // **Case 3: Adding a New Manually Entered Item**
+                        // **Case 2 & 3: Adding a New Item**
                         val newItem = NewWarehouseItem(
                             id = itemIdCounter++,
                             name = itemName,
                             quantity = quantity,
                             price = price
                         )
-                        addedItems.add(newItem)
+                        onAddItem(newItem)
                         Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
-                        // Reset input fields
-                        itemName = ""
-                        itemQuantity = ""
-                        itemPrice = ""
                     }
 
+                    // Reset input fields
+                    itemName = ""
+                    itemQuantity = ""
+                    itemPrice = ""
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = when {
-                        isEditing -> "Update Item"
-                        currentProcessingItem != null -> "Add Selected Item"
-                        else -> "Add Item"
-                    }
+                    text = if (isEditing) "Update Item" else "Add Item"
                 )
             }
         }
@@ -400,12 +375,12 @@ fun AddWarehouseItemScreen(
             Text(text = "Added Items:", style = MaterialTheme.typography.titleMedium)
         }
 
-        if (addedItems.isEmpty()) {
+        if (addedItems.value.isEmpty()) {
             item {
                 Text("No items added.")
             }
         } else {
-            items(addedItems, key = { it.id }) { item ->
+            items(addedItems.value, key = { it.id }) { item ->
                 ItemRow(
                     item = item,
                     onEdit = {
@@ -417,7 +392,7 @@ fun AddWarehouseItemScreen(
                         itemPrice = it.price.toString()
                     },
                     onDelete = {
-                        addedItems.remove(it)
+                        onRemoveItem(it)
                         Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
                     },
                     isSelectable = true // Allow editing/deleting manually added items
@@ -434,26 +409,26 @@ fun AddWarehouseItemScreen(
         item {
             Button(
                 onClick = {
-                    if (actionName.isBlank()) {
+                    if (actionName.value.isBlank()) {
                         Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT)
                             .show()
                         return@Button
                     }
 
-                    if (addedItems.isEmpty()) {
+                    if (addedItems.value.isEmpty()) {
                         Toast.makeText(context, "Add at least one item", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
                     // Prepare ActionDetails
                     val actionDetails = ActionDetails(
-                        actionName = actionName,
-                        actionType = actionType.name,
-                        actionStatus = actionStatus.name
+                        actionName = actionName.value,
+                        actionType = actionType.value.toString(),
+                        actionStatus = actionStatus.value.toString()
                     )
 
                     // Call onSubmitClick with ActionDetails and addedItems
-                    onSubmitClick(actionDetails, addedItems.toList())
+                    onSubmitClick(actionDetails, addedItems.value.toList())
                 },
                 modifier = Modifier
                     .fillMaxWidth()
