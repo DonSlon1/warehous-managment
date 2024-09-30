@@ -70,7 +70,7 @@ class AddWarehouseItemFragment : Fragment() {
 }
 
 data class NewWarehouseItem(
-    val id: Int, // Unique identifier
+    val id: Long, // Unique identifier
     var name: String,
     var quantity: Int,
     var price: Double
@@ -180,10 +180,21 @@ fun AddWarehouseItemScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(200.dp)
             ) {
                 items(selectedItems) { item ->
-                    Text("- ${item.name} (${item.quantity})")
+                    val newWarehouseItem = NewWarehouseItem(
+                        id = item.id,
+                        name = item.name,
+                        quantity = item.quantity,
+                        price = item.unitPrice
+                    )
+                    ItemRow(
+                        item = newWarehouseItem,
+                        onEdit = { },
+                        onDelete = { }
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
         }

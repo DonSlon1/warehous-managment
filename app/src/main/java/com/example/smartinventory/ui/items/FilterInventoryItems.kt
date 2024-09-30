@@ -29,9 +29,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.viewmodel.addwarehouseaction.AddWarehouseActionViewModel
+import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -45,6 +49,7 @@ class FilterInventoryItems @Inject constructor(
 ): Fragment() {
 
     private lateinit var viewModel: AddWarehouseActionViewModel
+    private val sharedViewModel: AddWarehouseSharedViewModel by activityViewModels()
     companion object {
         private const val CAMERA_REQUEST_CODE = 1001
         private const val TAG = "AddWarehouseItemFragment"
@@ -82,6 +87,10 @@ class FilterInventoryItems @Inject constructor(
                     viewModel = hiltViewModel(),
                     onItemClicked = { item ->
                         Log.d(TAG, "Item clicked: ${item.name}")
+                        val items = sharedViewModel.selectedItems.value.orEmpty().toMutableList()
+                        items.add(item)
+                        sharedViewModel.setSelectedItems(items)
+                        findNavController().popBackStack()
                     },
                     onCaptureButtonClick = {
                         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
