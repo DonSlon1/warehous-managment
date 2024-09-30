@@ -29,7 +29,6 @@ import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.livedata.observeAsState
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class AddWarehouseItemFragment : Fragment() {
@@ -46,16 +45,26 @@ class AddWarehouseItemFragment : Fragment() {
                         // Navigate to FilterInventoryItems
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment)
                     },
-                    onSubmitClick = { actionDetails ->
+                    onSubmitClick = { actionDetails, addedItems ->
                         // Handle submission logic here, e.g., save to database
-                        // actionDetails includes selected items from sharedViewModel
+                        // actionDetails includes selected items from sharedViewModel and addedItems from manual input
 
                         val selectedItems = sharedViewModel.selectedItems.value ?: emptyList()
 
-                        // Example: Display a toast with selected items count
+                        // Combine selectedItems and addedItems into one list
+                        val allItems = selectedItems.map { selectedItem ->
+                            NewWarehouseItem(
+                                id = selectedItem.id.toInt(), // Ensure id is Int
+                                name = selectedItem.name,
+                                quantity = selectedItem.quantity,
+                                price = selectedItem.unitPrice
+                            )
+                        } + addedItems
+
+                        // Example: Display a toast with total items count
                         Toast.makeText(
                             context,
-                            "Submitted action '${actionDetails.actionName}' with ${selectedItems.size} items",
+                            "Submitted action '${actionDetails.actionName}' with ${allItems.size} items",
                             Toast.LENGTH_LONG
                         ).show()
 
@@ -70,7 +79,7 @@ class AddWarehouseItemFragment : Fragment() {
 }
 
 data class NewWarehouseItem(
-    val id: Long, // Unique identifier
+    val id: Int, // Unique identifier
     var name: String,
     var quantity: Int,
     var price: Double
@@ -86,145 +95,6 @@ enum class WarehouseActionStatus {
     COMPLETED
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddWarehouseItemScreen(
-    onSelectItemsClick: () -> Unit,
-    onSubmitClick: (ActionDetails) -> Unit,
-    selectedItems: List<InventoryItem>
-) {
-    var actionName by remember { mutableStateOf("") }
-    var actionType by remember { mutableStateOf("INBOUND") }
-    var actionStatus by remember { mutableStateOf("DRAFT") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(text = "Add Warehouse Action", style = MaterialTheme.typography.titleLarge)
-
-        OutlinedTextField(
-            value = actionName,
-            onValueChange = { actionName = it },
-            label = { Text("Action Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Action Type Dropdown
-        var expandedType by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = expandedType,
-            onExpandedChange = { expandedType = !expandedType }
-        ) {
-            OutlinedTextField(
-                value = actionType,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Action Type") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expandedType,
-                onDismissRequest = { expandedType = false }
-            ) {
-                listOf("INBOUND", "OUTBOUND").forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type) },
-                        onClick = {
-                            actionType = type
-                            expandedType = false
-                        }
-                    )
-                }
-            }
-        }
-
-        // Action Status Dropdown
-        var expandedStatus by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = expandedStatus,
-            onExpandedChange = { expandedStatus = !expandedStatus }
-        ) {
-            OutlinedTextField(
-                value = actionStatus,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Action Status") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expandedStatus,
-                onDismissRequest = { expandedStatus = false }
-            ) {
-                listOf("DRAFT", "COMPLETED").forEach { status ->
-                    DropdownMenuItem(
-                        text = { Text(status) },
-                        onClick = {
-                            actionStatus = status
-                            expandedStatus = false
-                        }
-                    )
-                }
-            }
-        }
-
-        // Selected Items Section
-        Text(text = "Added Items:", style = MaterialTheme.typography.titleMedium)
-        if (selectedItems.isEmpty()) {
-            Text("No items added.")
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .heightIn(min = 0.dp, max = 200.dp)
-                    .fillMaxWidth()
-            ) {
-                items(selectedItems) { item ->
-                    val newWarehouseItem = NewWarehouseItem(
-                        id = item.id,
-                        name = item.name,
-                        quantity = item.quantity,
-                        price = item.unitPrice
-                    )
-                    ItemRow(
-                        item = newWarehouseItem,
-                        onEdit = { },
-                        onDelete = { }
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-            }
-        }
-
-        // Select Items Button
-        Button(
-            onClick = onSelectItemsClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Select Items")
-        }
-
-        // Submit Action Button
-        Button(
-            onClick = {
-                onSubmitClick(
-                    ActionDetails(
-                        actionName = actionName,
-                        actionType = actionType,
-                        actionStatus = actionStatus
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Submit Action")
-        }
-    }
-}
-
 data class ActionDetails(
     val actionName: String,
     val actionType: String,
@@ -233,10 +103,355 @@ data class ActionDetails(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun AddWarehouseItemScreen(
+    onSelectItemsClick: () -> Unit,
+    onSubmitClick: (ActionDetails, List<NewWarehouseItem>) -> Unit,
+    selectedItems: List<InventoryItem>
+) {
+    // **Warehouse Action Details State**
+    var actionName by remember { mutableStateOf("") }
+    var actionType by remember { mutableStateOf(WarehouseActionType.INBOUND) }
+    var actionStatus by remember { mutableStateOf(WarehouseActionStatus.DRAFT) }
+
+    // **New Item Input Fields State**
+    var itemName by remember { mutableStateOf("") }
+    var itemQuantity by remember { mutableStateOf("") }
+    var itemPrice by remember { mutableStateOf("") }
+
+    // **State list for manually added items**
+    var itemIdCounter by remember { mutableStateOf(0) } // To assign unique IDs
+    val addedItems = remember { mutableStateListOf<NewWarehouseItem>() }
+
+    // **State for Editing Items**
+    var isEditing by remember { mutableStateOf(false) }
+    var editingItem: NewWarehouseItem? by remember { mutableStateOf(null) }
+
+    // **Context for Toasts**
+    val context = LocalContext.current
+
+    // **Main Scrollable Container**
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // **Warehouse Action Details Section**
+        item {
+            Text(text = "Add Warehouse Action", style = MaterialTheme.typography.titleLarge)
+        }
+
+        item {
+            OutlinedTextField(
+                value = actionName,
+                onValueChange = { actionName = it },
+                label = { Text("Action Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // **Warehouse Action Type Dropdown**
+        item {
+            var expandedType by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expandedType,
+                onExpandedChange = { expandedType = !expandedType }
+            ) {
+                OutlinedTextField(
+                    value = actionType.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Action Type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedType,
+                    onDismissRequest = { expandedType = false }
+                ) {
+                    WarehouseActionType.values().forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.name) },
+                            onClick = {
+                                actionType = type
+                                expandedType = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // **Warehouse Action Status Dropdown**
+        item {
+            var expandedStatus by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expandedStatus,
+                onExpandedChange = { expandedStatus = !expandedStatus }
+            ) {
+                OutlinedTextField(
+                    value = actionStatus.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Action Status") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedStatus,
+                    onDismissRequest = { expandedStatus = false }
+                ) {
+                    WarehouseActionStatus.values().forEach { status ->
+                        DropdownMenuItem(
+                            text = { Text(status.name) },
+                            onClick = {
+                                actionStatus = status
+                                expandedStatus = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // **Manual Item Addition Section**
+        item {
+            Text(
+                text = if (isEditing) "Edit Item" else "Add New Item",
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+
+        item {
+            OutlinedTextField(
+                value = itemName,
+                onValueChange = { itemName = it },
+                label = { Text("Item Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        item {
+            OutlinedTextField(
+                value = itemQuantity,
+                onValueChange = { itemQuantity = it },
+                label = { Text("Item Quantity") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
+
+        item {
+            OutlinedTextField(
+                value = itemPrice,
+                onValueChange = { itemPrice = it },
+                label = { Text("Item Price") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // **Add or Update Item Button**
+        item {
+            Button(
+                onClick = {
+                    // Validate inputs
+                    val quantity = itemQuantity.toIntOrNull()
+                    val price = itemPrice.toDoubleOrNull()
+
+                    if (actionName.isBlank()) {
+                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT)
+                            .show()
+                        return@Button
+                    }
+
+                    if (itemName.isBlank() || quantity == null || price == null) {
+                        Toast.makeText(
+                            context,
+                            "Please enter valid item details",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@Button
+                    }
+
+                    if (isEditing && editingItem != null) {
+                        // Update existing item
+                        editingItem!!.name = itemName
+                        editingItem!!.quantity = quantity
+                        editingItem!!.price = price
+                        // Trigger recomposition by updating the list
+                        val index = addedItems.indexOf(editingItem!!)
+                        if (index != -1) {
+                            addedItems[index] = editingItem!!
+                        }
+                        isEditing = false
+                        editingItem = null
+                        Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // Add new item
+                        val newItem = NewWarehouseItem(
+                            id = itemIdCounter++,
+                            name = itemName,
+                            quantity = quantity,
+                            price = price
+                        )
+                        addedItems.add(newItem)
+                        Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Reset input fields
+                    itemName = ""
+                    itemQuantity = ""
+                    itemPrice = ""
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isEditing) "Update Item" else "Add Item")
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // **Select Items Button**
+        item {
+            Button(
+                onClick = onSelectItemsClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Select Items from Inventory")
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // **Added Items Section**
+        item {
+            Text(text = "Added Items:", style = MaterialTheme.typography.titleMedium)
+        }
+
+        // **Display Selected Items**
+        if (selectedItems.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Selected Items:",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            items(selectedItems) { item ->
+                val newWarehouseItem = NewWarehouseItem(
+                    id = item.id.toInt(), // Ensure id is Int
+                    name = item.name,
+                    quantity = item.quantity,
+                    price = item.unitPrice
+                )
+                ItemRow(
+                    item = newWarehouseItem,
+                    onEdit = {
+                        Toast.makeText(
+                            context,
+                            "Editing selected items not supported.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
+                    onDelete = {
+                        Toast.makeText(
+                            context,
+                            "Deletion of selected items not supported.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
+                    isSelectable = false // Prevent editing/deleting selected items
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+
+        // **Display Manually Added Items**
+        if (addedItems.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Manually Added Items:",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            items(addedItems, key = { it.id }) { item ->
+                ItemRow(
+                    item = item,
+                    onEdit = {
+                        isEditing = true
+                        editingItem = it
+                        // Populate input fields with existing item data
+                        itemName = it.name
+                        itemQuantity = it.quantity.toString()
+                        itemPrice = it.price.toString()
+                    },
+                    onDelete = {
+                        addedItems.remove(it)
+                        Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
+                    },
+                    isSelectable = true // Allow editing/deleting manually added items
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        // **Submit Action Button**
+        item {
+            Button(
+                onClick = {
+                    if (actionName.isBlank()) {
+                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT)
+                            .show()
+                        return@Button
+                    }
+
+                    if (selectedItems.isEmpty() && addedItems.isEmpty()) {
+                        Toast.makeText(context, "Add at least one item", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    // Prepare ActionDetails
+                    val actionDetails = ActionDetails(
+                        actionName = actionName,
+                        actionType = actionType.name,
+                        actionStatus = actionStatus.name
+                    )
+
+                    // Call onSubmitClick with ActionDetails and addedItems
+                    onSubmitClick(actionDetails, addedItems.toList())
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text("Submit Action")
+            }
+        }
+    }
+
+}
+
+@Composable
 fun ItemRow(
     item: NewWarehouseItem,
     onEdit: (NewWarehouseItem) -> Unit,
-    onDelete: (NewWarehouseItem) -> Unit
+    onDelete: (NewWarehouseItem) -> Unit,
+    isSelectable: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -249,7 +464,7 @@ fun ItemRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Item Details
+            // **Item Details**
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -258,19 +473,21 @@ fun ItemRow(
                 Text(text = "Price: \$${item.price}", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // Edit and Delete Buttons
-            Row {
-                IconButton(onClick = { onEdit(item) }) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Item"
-                    )
-                }
-                IconButton(onClick = { onDelete(item) }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Item"
-                    )
+            if (isSelectable) {
+                // **Edit and Delete Buttons for Manually Added Items**
+                Row {
+                    IconButton(onClick = { onEdit(item) }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Item"
+                        )
+                    }
+                    IconButton(onClick = { onDelete(item) }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Item"
+                        )
+                    }
                 }
             }
         }
