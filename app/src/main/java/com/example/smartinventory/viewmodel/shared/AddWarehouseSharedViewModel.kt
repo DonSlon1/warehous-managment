@@ -1,5 +1,7 @@
 package com.example.smartinventory.viewmodel.shared
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.ui.addwarehouseitem.view.NewWarehouseItem
@@ -29,9 +31,9 @@ class AddWarehouseSharedViewModel @Inject constructor() : ViewModel() {
     val addedItems: StateFlow<MutableList<NewWarehouseItem>> get() = _addedItems
 
     // **Selected Inventory Items**
-    private val _selectedItem: MutableStateFlow<InventoryItem?> = MutableStateFlow(null)
+    private val _selectedItem: MutableState<InventoryItem?> = mutableStateOf(null)
 
-    val selectedItem: StateFlow<InventoryItem?> get() = _selectedItem
+    val selectedItem: MutableState<InventoryItem?> get() = _selectedItem
 
     // **Updating Action Details**
     fun setActionName(name: String) {

@@ -30,6 +30,9 @@ import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @AndroidEntryPoint
 class AddWarehouseItemFragment : Fragment() {
@@ -74,7 +77,7 @@ class AddWarehouseItemFragment : Fragment() {
                         // Optionally, navigate back or reset fields
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
                     },
-                    selectedItem = sharedViewModel.selectedItem.collectAsState(initial = null),
+                    selectedItem = sharedViewModel.selectedItem,
                     actionName = sharedViewModel.actionName.collectAsState(initial = ""),
                     actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND),
                     actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT),
@@ -143,25 +146,28 @@ fun AddWarehouseItemScreen(
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var editingItem: NewWarehouseItem? by rememberSaveable { mutableStateOf(null) }
     var currentProcessingItem by remember { mutableStateOf<NewWarehouseItem?>(null) }
+    var selectionOfItem by rememberSaveable { mutableStateOf(false) }
 
     // **Context for Toasts**
     val context = LocalContext.current
 
     // **Effect to load next selected item into input fields**
     LaunchedEffect(selectedItem) {
-            selectedItem.value?.let {
-                currentProcessingItem = NewWarehouseItem(
-                    id = it.id, // Ensure id is Int
-                    name = it.name,
-                    quantity = it.quantity,
-                    price = it.unitPrice
-                )
-                // Pre-fill input fields
-                itemName = it.name
-                itemQuantity = it.quantity.toString()
-                itemPrice = it.unitPrice.toString()
-            }
+        selectedItem.value?.let {
+            currentProcessingItem = NewWarehouseItem(
+                id = it.id, // Ensure id is Int
+                name = it.name,
+                quantity = it.quantity,
+                price = it.unitPrice
+            )
+            // Pre-fill input fields
+            itemName = it.name
+            itemQuantity = it.quantity.toString()
+            itemPrice = it.unitPrice.toString()
+        }
+        selectionOfItem = selectedItem.value != null
     }
+
     // **Main Scrollable Container**
     LazyColumn(
         modifier = Modifier
@@ -264,100 +270,99 @@ fun AddWarehouseItemScreen(
             )
         }
 
-        item {
-            OutlinedTextField(
-                value = itemName,
-                onValueChange = { itemName = it },
-                label = { Text("Item Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
 
-            OutlinedTextField(
-                value = itemQuantity,
-                onValueChange = { itemQuantity = it },
-                label = { Text("Item Quantity") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-
-            OutlinedTextField(
-                value = itemPrice,
-                onValueChange = { itemPrice = it },
-                label = { Text("Item Price") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        // **Add or Update Item Button**
-        item {
-            Button(
-                onClick = {
-                    // Validate inputs
-                    val quantity = itemQuantity.toIntOrNull()
-                    val price = itemPrice.toDoubleOrNull()
-
-                    if (actionName.value.isBlank()) {
-                        Toast.makeText(context, "Please enter the action name", Toast.LENGTH_SHORT)
-                            .show()
-                        return@Button
-                    }
-
-                    if (itemName.isBlank() || quantity == null || price == null) {
-                        Toast.makeText(
-                            context,
-                            "Please enter valid item details",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@Button
-                    }
-
-                    if (isEditing && editingItem != null) {
-                        // **Case 1: Updating an Existing Manually Added Item**
-                        val updatedItem = editingItem!!.copy(
-                            name = itemName,
-                            quantity = quantity,
-                            price = price
-                        )
-                        onUpdateItem(updatedItem)
-                        isEditing = false
-                        editingItem = null
-                        Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
-                    } else {
-                        // **Case 2 & 3: Adding a New Item**
-                        val newItem = NewWarehouseItem(
-                            id = itemIdCounter++,
-                            name = itemName,
-                            quantity = quantity,
-                            price = price
-                        )
-                        onAddItem(newItem)
-                        Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
-                    }
-
-                    // Reset input fields
-                    itemName = ""
-                    itemQuantity = ""
-                    itemPrice = ""
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = if (isEditing) "Update Item" else "Add Item"
+        if (selectionOfItem) {
+            item {
+                OutlinedTextField(
+                    value = itemName,
+                    onValueChange = { itemName = it },
+                    label = { Text("Item Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
+
+                OutlinedTextField(
+                    value = itemQuantity,
+                    onValueChange = { itemQuantity = it },
+                    label = { Text("Item Quantity") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = itemPrice,
+                    onValueChange = { itemPrice = it },
+                    label = { Text("Item Price") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        // Validate inputs
+                        val quantity = itemQuantity.toIntOrNull()
+                        val price = itemPrice.toDoubleOrNull()
+
+                        if (actionName.value.isBlank()) {
+                            Toast.makeText(
+                                context,
+                                "Please enter the action name",
+                                Toast.LENGTH_SHORT
+                            )
+                                .show()
+                            return@Button
+                        }
+
+                        if (itemName.isBlank() || quantity == null || price == null) {
+                            Toast.makeText(
+                                context,
+                                "Please enter valid item details",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
+                        if (isEditing && editingItem != null) {
+                            // **Case 1: Updating an Existing Manually Added Item**
+                            val updatedItem = editingItem!!.copy(
+                                name = itemName,
+                                quantity = quantity,
+                                price = price
+                            )
+                            onUpdateItem(updatedItem)
+                            isEditing = false
+                            editingItem = null
+                            Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
+                        } else {
+                            // **Case 2 & 3: Adding a New Item**
+                            val newItem = NewWarehouseItem(
+                                id = itemIdCounter++,
+                                name = itemName,
+                                quantity = quantity,
+                                price = price
+                            )
+                            onAddItem(newItem)
+                            Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
+                        }
+
+                        // Reset input fields
+                        selectionOfItem = false
+                        itemName = ""
+                        itemQuantity = ""
+                        itemPrice = ""
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = if (isEditing) "Update Item" else "Add Item"
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
 
         // **Select Items Button**
         item {
@@ -370,7 +375,7 @@ fun AddWarehouseItemScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         // **Added Items Section**
@@ -388,6 +393,7 @@ fun AddWarehouseItemScreen(
                     item = item,
                     onEdit = {
                         isEditing = true
+                        selectionOfItem = true
                         editingItem = it
                         // Populate input fields with existing item data
                         itemName = it.name
