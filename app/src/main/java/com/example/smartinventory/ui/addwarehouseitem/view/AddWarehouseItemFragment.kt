@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,14 +24,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.example.smartinventory.R
-import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 @AndroidEntryPoint
 class AddWarehouseItemFragment : Fragment() {
@@ -77,17 +72,7 @@ class AddWarehouseItemFragment : Fragment() {
                         // Optionally, navigate back or reset fields
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
                     },
-                    selectedItem = sharedViewModel.selectedItem,
-                    actionName = sharedViewModel.actionName.collectAsState(initial = ""),
-                    actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND),
-                    actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT),
-                    addedItems = sharedViewModel.addedItems.collectAsState(initial = mutableListOf()),
-                    onActionNameChange = { sharedViewModel.setActionName(it) },
-                    onActionTypeChange = { sharedViewModel.setActionType(it) },
-                    onActionStatusChange = { sharedViewModel.setActionStatus(it) },
-                    onAddItem = { item -> sharedViewModel.addItem(item) },
-                    onUpdateItem = { item -> sharedViewModel.updateItem(item) },
-                    onRemoveItem = { item -> sharedViewModel.removeItem(item) }
+                    sharedViewModel = sharedViewModel
                 )
             }
         }
@@ -122,17 +107,7 @@ data class ActionDetails(
 fun AddWarehouseItemScreen(
     onSelectItemsClick: () -> Unit,
     onSubmitClick: (ActionDetails, List<NewWarehouseItem>) -> Unit,
-    selectedItem: State<InventoryItem?>,
-    actionName: State<String>,
-    actionType: State<Enum<*>>,
-    actionStatus: State<Enum<*>>,
-    addedItems: State<MutableList<NewWarehouseItem>>,
-    onActionNameChange: (String) -> Unit,
-    onActionTypeChange: (WarehouseActionType) -> Unit,
-    onActionStatusChange: (WarehouseActionStatus) -> Unit,
-    onAddItem: (NewWarehouseItem) -> Unit,
-    onUpdateItem: (NewWarehouseItem) -> Unit,
-    onRemoveItem: (NewWarehouseItem) -> Unit
+    sharedViewModel: AddWarehouseSharedViewModel,
 ) {
     // **New Item Input Fields State**
     var itemName by rememberSaveable { mutableStateOf("") }
@@ -150,6 +125,11 @@ fun AddWarehouseItemScreen(
 
     // **Context for Toasts**
     val context = LocalContext.current
+    val selectedItem = sharedViewModel.selectedItem;
+    val actionName = sharedViewModel.actionName.collectAsState(initial = "");
+    val actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND);
+    val actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT);
+    val addedItems = sharedViewModel.addedItems.collectAsState(initial = mutableListOf());
 
     // **Effect to load next selected item into input fields**
     LaunchedEffect(selectedItem) {
@@ -183,7 +163,7 @@ fun AddWarehouseItemScreen(
         item {
             OutlinedTextField(
                 value = actionName.value,
-                onValueChange = { onActionNameChange(it) },
+                onValueChange = { sharedViewModel.setActionName(it) },
                 label = { Text("Action Name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -215,7 +195,7 @@ fun AddWarehouseItemScreen(
                         DropdownMenuItem(
                             text = { Text(type.name) },
                             onClick = {
-                                onActionTypeChange(type)
+                                sharedViewModel.setActionType(type)
                                 expandedType = false
                             }
                         )
@@ -249,7 +229,7 @@ fun AddWarehouseItemScreen(
                         DropdownMenuItem(
                             text = { Text(status.name) },
                             onClick = {
-                                onActionStatusChange(status)
+                                sharedViewModel.setActionStatus(status)
                                 expandedStatus = false
                             }
                         )
@@ -331,7 +311,7 @@ fun AddWarehouseItemScreen(
                                 quantity = quantity,
                                 price = price
                             )
-                            onUpdateItem(updatedItem)
+                            sharedViewModel.updateItem(updatedItem)
                             isEditing = false
                             editingItem = null
                             Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
@@ -343,7 +323,8 @@ fun AddWarehouseItemScreen(
                                 quantity = quantity,
                                 price = price
                             )
-                            onAddItem(newItem)
+                            sharedViewModel.addItem(newItem)
+
                             Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
                         }
 
@@ -401,7 +382,7 @@ fun AddWarehouseItemScreen(
                         itemPrice = it.price.toString()
                     },
                     onDelete = {
-                        onRemoveItem(it)
+                        sharedViewModel.removeItem(it)
                         Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
                     },
                     isSelectable = true // Allow editing/deleting manually added items
@@ -495,3 +476,4 @@ fun ItemRow(
         }
     }
 }
+
