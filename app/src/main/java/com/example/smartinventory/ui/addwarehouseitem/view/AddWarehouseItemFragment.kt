@@ -45,22 +45,6 @@ class AddWarehouseItemFragment : Fragment() {
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment)
                     },
                     onSubmitClick = { actionDetails, addedItems ->
-                        // Handle submission logic here, e.g., save to database
-                        // actionDetails includes selected items from sharedViewModel and addedItems from manual input
-
-/*
-                        val selectedItems = sharedViewModel.selectedItem.value ?: emptyList()
-
-                        // Combine selectedItems and addedItems into one list
-                        val allItems = selectedItems.map { selectedItem ->
-                            NewWarehouseItem(
-                                id = selectedItem.id.toInt(), // Ensure id is Int
-                                name = selectedItem.name,
-                                quantity = selectedItem.quantity,
-                                price = selectedItem.unitPrice
-                            )
-                        } + addedItems
-*/
 
                         // Example: Display a toast with total items count
                         Toast.makeText(
