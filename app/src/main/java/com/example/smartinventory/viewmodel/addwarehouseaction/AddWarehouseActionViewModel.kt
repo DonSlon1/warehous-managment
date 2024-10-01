@@ -8,6 +8,7 @@ import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.data.model.WarehouseAction
+import com.example.smartinventory.data.model.WarehouseActionItem
 import com.example.smartinventory.data.repository.InventoryRepository
 import com.example.smartinventory.data.repository.WarehouseItemWithItemsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,11 @@ class AddWarehouseActionViewModel @Inject constructor(
             }
         }}
 
+    fun insertWarehouseActionWithItems(warehouseAction: WarehouseAction, items: List<WarehouseActionItem>) {
+        viewModelScope.launch {
+            repository.insertWarehouseActionWithItems(warehouseAction, items)
+        }
+    }
 
     fun insert(item: WarehouseAction) {
         viewModelScope.launch {

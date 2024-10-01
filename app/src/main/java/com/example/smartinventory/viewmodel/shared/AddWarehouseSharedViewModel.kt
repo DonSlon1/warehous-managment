@@ -5,8 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.ui.addwarehouseitem.view.NewWarehouseItem
-import com.example.smartinventory.ui.addwarehouseitem.view.WarehouseActionType
-import com.example.smartinventory.ui.addwarehouseitem.view.WarehouseActionStatus
+import com.example.smartinventory.data.model.WarehouseActionStatus
+import com.example.smartinventory.data.model.WarehouseActionType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

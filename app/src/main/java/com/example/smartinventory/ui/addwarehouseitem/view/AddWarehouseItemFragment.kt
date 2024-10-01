@@ -29,11 +29,17 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.smartinventory.data.model.WarehouseAction
+import com.example.smartinventory.data.model.WarehouseActionItem
+import com.example.smartinventory.data.model.WarehouseActionStatus
+import com.example.smartinventory.data.model.WarehouseActionType
+import com.example.smartinventory.viewmodel.addwarehouseaction.AddWarehouseActionViewModel
 
 @AndroidEntryPoint
 class AddWarehouseItemFragment : Fragment() {
 
     private val sharedViewModel: AddWarehouseSharedViewModel by activityViewModels()
+    private val viewModel: AddWarehouseActionViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -53,6 +59,20 @@ class AddWarehouseItemFragment : Fragment() {
                             "Submitted action '${actionDetails.actionName}' with {allItems.size} items",
                             Toast.LENGTH_LONG
                         ).show()
+                        val warehouseAction = WarehouseAction(
+                            name = actionDetails.actionName,
+                            type = actionDetails.actionType,
+                            status = actionDetails.actionStatus
+                        )
+                        // Insert the WarehouseAction and its items
+                        val addedItemss = addedItems.map { item ->
+                            WarehouseActionItem(
+                                inventoryItemId = item.id,
+                                quantity = item.quantity,
+                                price = item.price
+                            )
+                        }
+                        viewModel.insertWarehouseActionWithItems(warehouseAction, addedItemss)
 
                         // Optionally, navigate back or reset fields
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
@@ -71,20 +91,10 @@ data class NewWarehouseItem(
     var price: Double
 )
 
-enum class WarehouseActionType {
-    INBOUND,
-    OUTBOUND
-}
-
-enum class WarehouseActionStatus {
-    DRAFT,
-    COMPLETED
-}
-
 data class ActionDetails(
     val actionName: String,
-    val actionType: String,
-    val actionStatus: String
+    val actionType: WarehouseActionType,
+    val actionStatus: WarehouseActionStatus
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -398,8 +408,8 @@ fun AddWarehouseItemScreen(
                     // Prepare ActionDetails
                     val actionDetails = ActionDetails(
                         actionName = actionName.value,
-                        actionType = actionType.value.toString(),
-                        actionStatus = actionStatus.value.toString()
+                        actionType = actionType.value,
+                        actionStatus = actionStatus.value
                     )
 
                     // Call onSubmitClick with ActionDetails and addedItems

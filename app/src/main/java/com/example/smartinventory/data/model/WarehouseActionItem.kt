@@ -10,5 +10,6 @@ import kotlinx.parcelize.Parcelize
 data class WarehouseActionItem (
     val warehouseActionId: Long = 0L,
     val inventoryItemId: Long = 0L,
-    val quantity: Int
+    val quantity: Int,
+    val price: Double
 ) : Parcelable

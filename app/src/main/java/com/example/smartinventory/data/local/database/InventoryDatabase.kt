@@ -9,12 +9,14 @@ import com.example.smartinventory.data.local.dao.InventoryDao
 import com.example.smartinventory.data.local.dao.WarehouseActionItemWithItemsDao
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.data.model.WarehouseAction
+import com.example.smartinventory.data.model.WarehouseActionItem
 import com.example.smartinventory.utils.Converters
 
 @Database(
     entities = [
         InventoryItem::class,
-        WarehouseAction::class
+        WarehouseAction::class,
+        WarehouseActionItem::class
     ], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class InventoryDatabase : RoomDatabase() {
