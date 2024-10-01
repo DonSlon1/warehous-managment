@@ -87,12 +87,6 @@ class FilterInventoryItems @Inject constructor(
                     viewModel = hiltViewModel(),
                     onItemClicked = { item ->
                         Log.d(TAG, "Item clicked: ${item.name}")
-/*
-                        val items = sharedViewModel.selectedItems.value.orEmpty().toMutableList()
-                        items.add(item)
-                        sharedViewModel.setSelectedItems(items)
-
- */
                         sharedViewModel.setSelectedItem(item)
                         findNavController().popBackStack()
                     },

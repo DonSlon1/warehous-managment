@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -91,7 +92,7 @@ class AddWarehouseItemFragment : Fragment() {
 }
 
 data class NewWarehouseItem(
-    val id: Int, // Unique identifier
+    val id: Long, // Unique identifier
     var name: String,
     var quantity: Int,
     var price: Double
@@ -136,7 +137,7 @@ fun AddWarehouseItemScreen(
     var itemPrice by rememberSaveable { mutableStateOf("") }
 
     // **State list for manually added items**
-    var itemIdCounter by rememberSaveable { mutableStateOf(0) } // To assign unique IDs
+    var itemIdCounter by rememberSaveable { mutableStateOf(0L) } // To assign unique IDs
 
     // **State for Editing Items**
     var isEditing by rememberSaveable { mutableStateOf(false) }
@@ -150,7 +151,7 @@ fun AddWarehouseItemScreen(
     LaunchedEffect(selectedItem) {
             selectedItem.value?.let {
                 currentProcessingItem = NewWarehouseItem(
-                    id = it.id.toInt(), // Ensure id is Int
+                    id = it.id, // Ensure id is Int
                     name = it.name,
                     quantity = it.quantity,
                     price = it.unitPrice
@@ -178,6 +179,7 @@ fun AddWarehouseItemScreen(
                 value = actionName.value,
                 onValueChange = { onActionNameChange(it) },
                 label = { Text("Action Name") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -187,21 +189,23 @@ fun AddWarehouseItemScreen(
             var expandedType by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expandedType,
-                onExpandedChange = { expandedType = !expandedType }
+                onExpandedChange = { expandedType = it }
             ) {
                 OutlinedTextField(
                     value = actionType.value.name,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Action Type") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
-                    modifier = Modifier.fillMaxWidth()
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType)
+                    },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedType,
                     onDismissRequest = { expandedType = false }
                 ) {
-                    WarehouseActionType.values().forEach { type ->
+                    WarehouseActionType.entries.forEach { type ->
                         DropdownMenuItem(
                             text = { Text(type.name) },
                             onClick = {
@@ -219,21 +223,23 @@ fun AddWarehouseItemScreen(
             var expandedStatus by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expandedStatus,
-                onExpandedChange = { expandedStatus = !expandedStatus }
+                onExpandedChange = { expandedStatus = it }
             ) {
                 OutlinedTextField(
                     value = actionStatus.value.name,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Action Status") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
-                    modifier = Modifier.fillMaxWidth()
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus)
+                    },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedStatus,
                     onDismissRequest = { expandedStatus = false }
                 ) {
-                    WarehouseActionStatus.values().forEach { status ->
+                    WarehouseActionStatus.entries.forEach { status ->
                         DropdownMenuItem(
                             text = { Text(status.name) },
                             onClick = {
@@ -263,11 +269,10 @@ fun AddWarehouseItemScreen(
                 value = itemName,
                 onValueChange = { itemName = it },
                 label = { Text("Item Name") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-        }
 
-        item {
             OutlinedTextField(
                 value = itemQuantity,
                 onValueChange = { itemQuantity = it },
@@ -276,9 +281,7 @@ fun AddWarehouseItemScreen(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-        }
 
-        item {
             OutlinedTextField(
                 value = itemPrice,
                 onValueChange = { itemPrice = it },
