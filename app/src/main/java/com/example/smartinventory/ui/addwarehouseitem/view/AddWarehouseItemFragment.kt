@@ -28,6 +28,7 @@ import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.tooling.preview.Preview
 
 @AndroidEntryPoint
 class AddWarehouseItemFragment : Fragment() {
@@ -99,7 +100,7 @@ fun AddWarehouseItemScreen(
     var itemPrice by rememberSaveable { mutableStateOf("") }
 
     // **State list for manually added items**
-    var itemIdCounter by rememberSaveable { mutableStateOf(0L) } // To assign unique IDs
+    var itemIdCounter by rememberSaveable { mutableLongStateOf(0L) } // To assign unique IDs
 
     // **State for Editing Items**
     var isEditing by rememberSaveable { mutableStateOf(false) }
@@ -109,11 +110,11 @@ fun AddWarehouseItemScreen(
 
     // **Context for Toasts**
     val context = LocalContext.current
-    val selectedItem = sharedViewModel.selectedItem;
-    val actionName = sharedViewModel.actionName.collectAsState(initial = "");
-    val actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND);
-    val actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT);
-    val addedItems = sharedViewModel.addedItems.collectAsState(initial = mutableListOf());
+    val selectedItem = sharedViewModel.selectedItem
+    val actionName = sharedViewModel.actionName.collectAsState(initial = "")
+    val actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND)
+    val actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT)
+    val addedItems = sharedViewModel.addedItems.collectAsState(initial = mutableListOf())
 
     // **Effect to load next selected item into input fields**
     LaunchedEffect(selectedItem) {
@@ -461,3 +462,47 @@ fun ItemRow(
     }
 }
 
+data class InventoryItem(
+    val id: Int,
+    val name: String,
+    val quantity: Int,
+    val unitPrice: Double
+)
+
+@Composable
+fun PopulateViewModelForPreview(viewModel: AddWarehouseSharedViewModel) {
+    // Example items to add for preview purposes
+    val items = listOf(
+        InventoryItem(id = 1, name = "Sample Item 1", quantity = 10, unitPrice = 15.0),
+        InventoryItem(id = 2, name = "Sample Item 2", quantity = 5, unitPrice = 25.0),
+        InventoryItem(id = 3, name = "Sample Item 3", quantity = 20, unitPrice = 8.0),
+    )
+
+    items.forEach { item ->
+        viewModel.addItem(
+            NewWarehouseItem(
+                id = item.id.toLong(),
+                name = item.name,
+                quantity = item.quantity,
+                price = item.unitPrice
+            )
+        )
+    }
+
+    viewModel.setActionName("Sample Action")
+    viewModel.setActionType(WarehouseActionType.INBOUND)
+    viewModel.setActionStatus(WarehouseActionStatus.DRAFT)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AddWarehouseItemScreenPreview() {
+    val viewModel = AddWarehouseSharedViewModel()
+    PopulateViewModelForPreview(viewModel)
+
+    AddWarehouseItemScreen(
+        onSelectItemsClick = {},
+        onSubmitClick = { _, _ -> },
+        sharedViewModel = viewModel
+    )
+}
