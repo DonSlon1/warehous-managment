@@ -1,5 +1,6 @@
 package com.example.smartinventory.viewmodel.addwarehouseaction
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.data.model.WarehouseAction
 import com.example.smartinventory.data.model.WarehouseActionItem
+import com.example.smartinventory.data.model.WarehouseActionType
 import com.example.smartinventory.data.repository.InventoryRepository
 import com.example.smartinventory.data.repository.WarehouseItemWithItemsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,8 +42,29 @@ class AddWarehouseActionViewModel @Inject constructor(
 
     fun insertWarehouseActionWithItems(warehouseAction: WarehouseAction, items: List<WarehouseActionItem>) {
         viewModelScope.launch {
+
+            items.forEach {
+                if (!updateItemQuantity(it,warehouseAction.type)) {
+                    throw Exception("Not enough quantity")
+                }
+            }
             repository.insertWarehouseActionWithItems(warehouseAction, items)
         }
+    }
+
+    private suspend fun updateItemQuantity(item: WarehouseActionItem,actionType: WarehouseActionType): Boolean {
+        var quantity = inventoryRepository.getQuantity(item.inventoryItemId)
+        if (actionType == WarehouseActionType.INBOUND) {
+            quantity += item.quantity
+        } else {
+            quantity -= item.quantity
+        }
+        if (quantity < 0) {
+            return false
+        }
+        inventoryRepository.updateQuantity(item.inventoryItemId, quantity)
+
+        return true
     }
 
     fun insert(item: WarehouseAction) {

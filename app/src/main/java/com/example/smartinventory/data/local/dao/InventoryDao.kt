@@ -14,8 +14,17 @@ interface InventoryDao {
     @Query("SELECT * FROM inventory_items")
     fun getAllItems(): LiveData<List<InventoryItem>>
 
+    @Query("SELECT * FROM inventory_items WHERE id = :id")
+    suspend fun getItem(id: Long): InventoryItem?
+
+    @Query("SELECT quantity FROM inventory_items WHERE id = :id")
+    suspend fun getQuantity(id: Long): Int?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: InventoryItem)
+
+    @Query("UPDATE inventory_items SET quantity = :quantity WHERE id = :id")
+    suspend fun updateQuantity(id: Long, quantity: Int)
 
     @Update
     suspend fun update(item: InventoryItem)

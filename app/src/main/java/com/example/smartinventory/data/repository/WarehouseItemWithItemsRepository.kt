@@ -1,14 +1,14 @@
 package com.example.smartinventory.data.repository
 
 import androidx.lifecycle.LiveData
-import com.example.smartinventory.data.local.dao.WarehouseActionItemWithItemsDao
+import com.example.smartinventory.data.local.dao.WarehouseActionDao
 import com.example.smartinventory.data.model.WarehouseAction
 import com.example.smartinventory.data.model.WarehouseActionItem
 import com.example.smartinventory.data.model.WarehouseActionWithItems
 import javax.inject.Inject
 
 class WarehouseItemWithItemsRepository @Inject constructor(
-    private val warehouseActionItemWithItemsDao: WarehouseActionItemWithItemsDao
+    private val warehouseActionItemWithItemsDao: WarehouseActionDao
 ) {
     val allItems: LiveData<List<WarehouseAction>> = warehouseActionItemWithItemsDao.getAllItems()
 

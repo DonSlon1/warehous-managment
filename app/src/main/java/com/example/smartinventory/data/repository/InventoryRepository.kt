@@ -21,4 +21,19 @@ class InventoryRepository @Inject constructor(
     suspend fun delete(item: InventoryItem) {
         inventoryDao.delete(item)
     }
+
+    suspend fun getItem(id: Long): InventoryItem? {
+        return inventoryDao.getItem(id)
+    }
+
+    suspend fun getAllItems(): LiveData<List<InventoryItem>> {
+        return inventoryDao.getAllItems()
+    }
+
+    suspend fun updateQuantity(id: Long, quantity: Int) {
+        inventoryDao.updateQuantity(id, quantity)
+    }
+    suspend fun getQuantity(id: Long): Int {
+        return inventoryDao.getQuantity(id) ?: 0
+    }
 }

@@ -6,7 +6,7 @@ import kotlinx.parcelize.Parcelize
 
 
 @Parcelize
-@Entity(primaryKeys = ["warehouseActionId", "inventoryItemId"])
+@Entity(tableName = "warehouse_action_items" ,primaryKeys = ["warehouseActionId", "inventoryItemId"])
 data class WarehouseActionItem (
     val warehouseActionId: Long = 0L,
     val inventoryItemId: Long = 0L,

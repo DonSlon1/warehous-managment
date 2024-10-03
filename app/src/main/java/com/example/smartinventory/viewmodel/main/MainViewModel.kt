@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartinventory.data.local.database.InventoryDatabase
 import com.example.smartinventory.data.model.InventoryItem
 import com.example.smartinventory.data.repository.InventoryRepository
@@ -12,12 +13,14 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: InventoryRepository
-    val allInventoryItems: LiveData<List<InventoryItem>>
+    lateinit var allInventoryItems: LiveData<List<InventoryItem>>
 
     init {
         val inventoryDao = InventoryDatabase.getDatabase(application).inventoryDao()
         repository = InventoryRepository(inventoryDao)
-        allInventoryItems = repository.allItems
+        viewModelScope.launch {
+            allInventoryItems = repository.getAllItems()
+        }
     }
 
     fun insert(item: InventoryItem) = viewModelScope.launch {

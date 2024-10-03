@@ -3,7 +3,7 @@ package com.example.smartinventory.di
 import android.content.Context
 import androidx.room.Room
 import com.example.smartinventory.data.local.dao.InventoryDao
-import com.example.smartinventory.data.local.dao.WarehouseActionItemWithItemsDao
+import com.example.smartinventory.data.local.dao.WarehouseActionDao
 import com.example.smartinventory.data.local.database.InventoryDatabase
 import com.example.smartinventory.data.repository.InventoryRepository
 import dagger.Module
@@ -39,7 +39,7 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideWarehouseActionItemWithItemsDao(database: InventoryDatabase): WarehouseActionItemWithItemsDao {
+    fun provideWarehouseActionItemWithItemsDao(database: InventoryDatabase): WarehouseActionDao {
         return database.warehouseActionItemWithItemsDao()
     }
 

@@ -12,7 +12,7 @@ import com.example.smartinventory.data.model.WarehouseAction
 import com.example.smartinventory.data.model.WarehouseActionItem
 
 @Dao
-interface WarehouseActionItemWithItemsDao {
+interface WarehouseActionDao {
     @Query("SELECT * FROM warehouse_actions")
     fun getAllItems(): LiveData<List<WarehouseAction>>
 

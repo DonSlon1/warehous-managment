@@ -72,7 +72,12 @@ class AddWarehouseItemFragment : Fragment() {
                                 price = item.price
                             )
                         }
-                        viewModel.insertWarehouseActionWithItems(warehouseAction, addedItemss)
+                        try {
+                            viewModel.insertWarehouseActionWithItems(warehouseAction, addedItemss)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                            return@AddWarehouseItemScreen
+                        }
 
                         // Optionally, navigate back or reset fields
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
@@ -116,7 +121,6 @@ fun AddWarehouseItemScreen(
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var editingItem: NewWarehouseItem? by rememberSaveable { mutableStateOf(null) }
     var currentProcessingItem by remember { mutableStateOf<NewWarehouseItem?>(null) }
-    var selectionOfItem by rememberSaveable { mutableStateOf(false) }
 
     // **Context for Toasts**
     val context = LocalContext.current
@@ -129,18 +133,26 @@ fun AddWarehouseItemScreen(
     // **Effect to load next selected item into input fields**
     LaunchedEffect(selectedItem) {
         selectedItem.value?.let {
-            currentProcessingItem = NewWarehouseItem(
-                id = it.id, // Ensure id is Int
-                name = it.name,
-                quantity = it.quantity,
-                price = it.unitPrice
-            )
-            // Pre-fill input fields
-            itemName = it.name
-            itemQuantity = it.quantity.toString()
-            itemPrice = it.unitPrice.toString()
+            val existId = it.id
+            val existingItem = addedItems.value.find { it.id == existId }
+            if (existingItem != null) {
+                Toast.makeText(context, "Item already added", Toast.LENGTH_SHORT).show()
+                isEditing = true
+                currentProcessingItem = existingItem
+            } else {
+                currentProcessingItem = NewWarehouseItem(
+                    id = it.id, // Ensure id is Int
+                    name = it.name,
+                    quantity = it.quantity,
+                    price = it.unitPrice
+                )
+                // Pre-fill input fields
+            }
+
+            itemName = currentProcessingItem!!.name
+            itemQuantity = currentProcessingItem!!.quantity.toString()
+            itemPrice = currentProcessingItem!!.price.toString()
         }
-        selectionOfItem = selectedItem.value != null
     }
 
     // **Main Scrollable Container**
@@ -246,7 +258,7 @@ fun AddWarehouseItemScreen(
         }
 
 
-        if (selectionOfItem) {
+        if (currentProcessingItem != null) {
             item {
                 OutlinedTextField(
                     value = itemName,
@@ -276,21 +288,16 @@ fun AddWarehouseItemScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
+                        if (currentProcessingItem == null) {
+                            Toast.makeText(context, "No item selected", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         // Validate inputs
                         val quantity = itemQuantity.toIntOrNull()
                         val price = itemPrice.toDoubleOrNull()
 
-                        if (actionName.value.isBlank()) {
-                            Toast.makeText(
-                                context,
-                                "Please enter the action name",
-                                Toast.LENGTH_SHORT
-                            )
-                                .show()
-                            return@Button
-                        }
 
-                        if (itemName.isBlank() || quantity == null || price == null) {
+                        if (quantity == null || price == null) {
                             Toast.makeText(
                                 context,
                                 "Please enter valid item details",
@@ -299,32 +306,33 @@ fun AddWarehouseItemScreen(
                             return@Button
                         }
 
-                        if (isEditing && editingItem != null) {
+                        val existingItem = sharedViewModel.addedItems.value.find { it.id == currentProcessingItem!!.id }
+                        if (existingItem != null) {
                             // **Case 1: Updating an Existing Manually Added Item**
-                            val updatedItem = editingItem!!.copy(
-                                name = itemName,
+                            val updatedItem = existingItem.copy(
                                 quantity = quantity,
                                 price = price
                             )
                             sharedViewModel.updateItem(updatedItem)
-                            isEditing = false
-                            editingItem = null
+                            isEditing = true
                             Toast.makeText(context, "Item updated", Toast.LENGTH_SHORT).show()
                         } else {
                             // **Case 2 & 3: Adding a New Item**
                             val newItem = NewWarehouseItem(
-                                id = itemIdCounter++,
-                                name = itemName,
+                                id = currentProcessingItem?.id ?: itemIdCounter++,
+                                name = currentProcessingItem!!.name,
                                 quantity = quantity,
                                 price = price
                             )
+                            isEditing = false
                             sharedViewModel.addItem(newItem)
 
                             Toast.makeText(context, "Item added", Toast.LENGTH_SHORT).show()
                         }
 
                         // Reset input fields
-                        selectionOfItem = false
+                        selectedItem.value = null
+                        currentProcessingItem = null
                         itemName = ""
                         itemQuantity = ""
                         itemPrice = ""
@@ -369,14 +377,19 @@ fun AddWarehouseItemScreen(
                     item = item,
                     onEdit = {
                         isEditing = true
-                        selectionOfItem = true
-                        editingItem = it
+                        //selectedItem.value = null
+                        currentProcessingItem = it
                         // Populate input fields with existing item data
                         itemName = it.name
                         itemQuantity = it.quantity.toString()
                         itemPrice = it.price.toString()
                     },
                     onDelete = {
+                        isEditing = false
+                        currentProcessingItem = null
+                        itemName = ""
+                        itemQuantity = ""
+                        itemQuantity = ""
                         sharedViewModel.removeItem(it)
                         Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
                     },
