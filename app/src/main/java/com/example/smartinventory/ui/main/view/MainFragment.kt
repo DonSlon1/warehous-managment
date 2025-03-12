@@ -40,6 +40,10 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
+        
+        // Register the MainViewModel with the InventoryRefresher
+        com.example.smartinventory.utils.InventoryRefresher.registerMainViewModel(mainViewModel)
+        
         inventoryAdapter = InventoryAdapter { inventoryItem ->
             // Navigate to AddItemFragment with the selected item for editing
             val action = MainFragmentDirections.actionMainFragmentToAddItemFragment(inventoryItem)
@@ -83,6 +87,8 @@ class MainFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Unregister from InventoryRefresher to prevent memory leaks
+        com.example.smartinventory.utils.InventoryRefresher.unregisterMainViewModel()
         _binding = null
     }
 }

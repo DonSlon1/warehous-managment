@@ -50,8 +50,8 @@ class AddWarehouseActionViewModel @Inject constructor(
                 }
                 repository.insertWarehouseActionWithItems(warehouseAction, items)
                 
-                // Broadcast final notification that inventory has been fully updated
-                com.example.smartinventory.utils.EventBus.postEvent(com.example.smartinventory.utils.AppEvent.InventoryUpdated)
+                // Force refresh inventory data immediately
+                com.example.smartinventory.utils.InventoryRefresher.refreshInventory()
             } catch (e: Exception) {
                 throw e
             }
@@ -80,9 +80,6 @@ class AddWarehouseActionViewModel @Inject constructor(
         
         // Use update instead of updateQuantity to ensure full entity update
         inventoryRepository.update(updatedItem)
-        
-        // Emit an event to notify that inventory has been updated
-        com.example.smartinventory.utils.EventBus.postEvent(com.example.smartinventory.utils.AppEvent.InventoryUpdated)
         
         return true
     }

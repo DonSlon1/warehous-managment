@@ -42,7 +42,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Method to force refresh the data
     fun refreshData() {
         viewModelScope.launch {
-            // This just triggers the LiveData again with the timestamp
+            // Get fresh data directly from the database
+            val db = InventoryDatabase.getDatabase(getApplication())
+            val freshItems = db.inventoryDao().getAllItemsSync()
+            
+            // Update the LiveData with fresh data
+            _allInventoryItems.postValue(freshItems)
+            
+            // Also trigger the refresh timestamp
             refreshTrigger.value = System.currentTimeMillis()
         }
     }
