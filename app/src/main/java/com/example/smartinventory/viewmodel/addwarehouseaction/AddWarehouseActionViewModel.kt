@@ -19,11 +19,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddWarehouseActionViewModel @Inject constructor(
-    private val inventoryRepository: InventoryRepository,
-    private val repository: WarehouseItemWithItemsRepository
+    val inventoryRepository: InventoryRepository,
+    val repository: WarehouseItemWithItemsRepository
 ) : ViewModel() {
 
     var isEditMode: Boolean = false
+    var editingWarehouseActionId: Long = -1L
+    
     private var _filterQuery = MutableLiveData("")
     val filterQuery: LiveData<String> get() = _filterQuery
 
@@ -40,15 +42,44 @@ class AddWarehouseActionViewModel @Inject constructor(
             }
         }}
 
+    // LiveData for the current warehouse action being edited
+    private val _currentWarehouseAction = MutableLiveData<WarehouseAction?>()
+    val currentWarehouseAction: LiveData<WarehouseAction?> = _currentWarehouseAction
+
+    // Load a warehouse action for editing
+    fun loadWarehouseAction(warehouseActionId: Long) {
+        if (warehouseActionId <= 0) {
+            isEditMode = false
+            _currentWarehouseAction.value = null
+            return
+        }
+
+        isEditMode = true
+        editingWarehouseActionId = warehouseActionId
+        
+        viewModelScope.launch {
+            val actionPair = repository.getWarehouseActionWithItems(warehouseActionId)
+            actionPair?.let {
+                _currentWarehouseAction.value = it.first
+            }
+        }
+    }
+
     fun insertWarehouseActionWithItems(warehouseAction: WarehouseAction, items: List<WarehouseActionItem>) {
         viewModelScope.launch {
             try {
-                items.forEach {
-                    if (!updateItemQuantity(it, warehouseAction.type)) {
-                        throw Exception("Not enough quantity")
+                if (isEditMode) {
+                    // Editing existing warehouse action
+                    repository.updateWarehouseActionWithItems(warehouseAction, items)
+                } else {
+                    // Creating new warehouse action
+                    items.forEach {
+                        if (!updateItemQuantity(it, warehouseAction.type)) {
+                            throw Exception("Not enough quantity")
+                        }
                     }
+                    repository.insertWarehouseActionWithItems(warehouseAction, items)
                 }
-                repository.insertWarehouseActionWithItems(warehouseAction, items)
                 
                 // Force refresh inventory data immediately
                 com.example.smartinventory.utils.InventoryRefresher.refreshInventory()

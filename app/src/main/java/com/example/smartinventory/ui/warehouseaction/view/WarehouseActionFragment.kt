@@ -34,12 +34,12 @@ class WarehouseActionFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         warehouseActionViewModel = ViewModelProvider(this).get(WarehouseActionViewModel::class.java)
-        warehouseActionAdapter = WarehouseActionAdapter { inventoryItem ->
-            // Navigate to AddItemFragment with the selected item for editing
-/*
-            val action = MainFragmentDirections.actionMainFragmentToAddItemFragment(inventoryItem)
-            findNavController().navigate(action)
-*/
+        warehouseActionAdapter = WarehouseActionAdapter { warehouseAction ->
+            // Navigate to AddWarehouseItemFragment with the selected action for editing
+            val bundle = Bundle().apply {
+                putLong("warehouseActionId", warehouseAction.id)
+            }
+            findNavController().navigate(R.id.action_warehouseActionFragment_to_navAddWarehouseItemFragment, bundle)
         }
 
         binding.recyclerView.apply {
@@ -52,7 +52,7 @@ class WarehouseActionFragment: Fragment() {
         }
 
         binding.fabAddItem.setOnClickListener {
-            // Navigate to AddItemFragment without any item for adding a new item
+            // Navigate to AddWarehouseItemFragment without any item for adding a new item
             findNavController().navigate(R.id.action_warehouseActionFragment_to_navAddWarehouseItemFragment)
         }
     }

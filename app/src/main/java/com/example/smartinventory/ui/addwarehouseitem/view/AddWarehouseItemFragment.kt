@@ -28,6 +28,7 @@ import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.smartinventory.data.model.WarehouseAction
 import com.example.smartinventory.data.model.WarehouseActionItem
@@ -40,6 +41,21 @@ class AddWarehouseItemFragment : Fragment() {
 
     private val sharedViewModel: AddWarehouseSharedViewModel by activityViewModels()
     private val viewModel: AddWarehouseActionViewModel by activityViewModels()
+    
+    private var warehouseActionId: Long = -1L
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Get warehouseActionId from arguments
+        arguments?.let {
+            warehouseActionId = it.getLong("warehouseActionId", -1L)
+            if (warehouseActionId > 0) {
+                // We're in edit mode, load the warehouse action
+                viewModel.loadWarehouseAction(warehouseActionId)
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -52,37 +68,53 @@ class AddWarehouseItemFragment : Fragment() {
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment)
                     },
                     onSubmitClick = { actionDetails, addedItems ->
+                        val warehouseAction = if (viewModel.isEditMode) {
+                            // If editing, use the existing ID
+                            WarehouseAction(
+                                id = viewModel.editingWarehouseActionId,
+                                name = actionDetails.actionName,
+                                type = actionDetails.actionType,
+                                status = actionDetails.actionStatus
+                            )
+                        } else {
+                            // If adding new, use default ID 0 (will be autoincremented)
+                            WarehouseAction(
+                                name = actionDetails.actionName,
+                                type = actionDetails.actionType,
+                                status = actionDetails.actionStatus
+                            )
+                        }
 
-                        // Example: Display a toast with total items count
-                        Toast.makeText(
-                            context,
-                            "Submitted action '${actionDetails.actionName}' with {allItems.size} items",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        val warehouseAction = WarehouseAction(
-                            name = actionDetails.actionName,
-                            type = actionDetails.actionType,
-                            status = actionDetails.actionStatus
-                        )
-                        // Insert the WarehouseAction and its items
-                        val addedItemss = addedItems.map { item ->
+                        // Map UI items to WarehouseActionItem entities
+                        val actionItems = addedItems.map { item ->
                             WarehouseActionItem(
+                                warehouseActionId = warehouseAction.id,
                                 inventoryItemId = item.id,
                                 quantity = item.quantity,
                                 price = item.price
                             )
                         }
+
                         try {
-                            viewModel.insertWarehouseActionWithItems(warehouseAction, addedItemss)
+                            // The viewModel will handle whether to insert or update
+                            viewModel.insertWarehouseActionWithItems(warehouseAction, actionItems)
+                            
+                            Toast.makeText(
+                                context,
+                                if (viewModel.isEditMode) "Updated warehouse action" else "Created warehouse action",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } catch (e: Exception) {
                             Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
                             return@AddWarehouseItemScreen
                         }
 
-                        // Optionally, navigate back or reset fields
+                        // Navigate back to warehouse actions list
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
                     },
-                    sharedViewModel = sharedViewModel
+                    sharedViewModel = sharedViewModel,
+                    isEditMode = viewModel.isEditMode,
+                    viewModel = viewModel
                 )
             }
         }
@@ -108,6 +140,8 @@ fun AddWarehouseItemScreen(
     onSelectItemsClick: () -> Unit,
     onSubmitClick: (ActionDetails, List<NewWarehouseItem>) -> Unit,
     sharedViewModel: AddWarehouseSharedViewModel,
+    isEditMode: Boolean = false,
+    viewModel: AddWarehouseActionViewModel
 ) {
     // **New Item Input Fields State**
     var itemName by rememberSaveable { mutableStateOf("") }
@@ -129,6 +163,42 @@ fun AddWarehouseItemScreen(
     val actionType = sharedViewModel.actionType.collectAsState(initial = WarehouseActionType.INBOUND)
     val actionStatus = sharedViewModel.actionStatus.collectAsState(initial = WarehouseActionStatus.DRAFT)
     val addedItems = sharedViewModel.addedItems.collectAsState(initial = mutableListOf())
+    
+    // Observe the currentWarehouseAction for edit mode
+    val currentWarehouseAction by viewModel.currentWarehouseAction.observeAsState()
+    
+    // Effect to load warehouse action data when in edit mode
+    LaunchedEffect(currentWarehouseAction) {
+        currentWarehouseAction?.let { action ->
+            // Set the action details in the shared view model
+            sharedViewModel.setActionName(action.name)
+            sharedViewModel.setActionType(action.type)
+            sharedViewModel.setActionStatus(action.status)
+            
+            // Load the action items from the database and add them to the shared view model
+            viewModel.repository.getWarehouseActionWithItems(action.id)?.let { actionPair ->
+                // Clear existing items first
+                addedItems.value.forEach { item ->
+                    sharedViewModel.removeItem(item)
+                }
+                
+                // Add the items from the database
+                val items = actionPair.second
+                items.forEach { actionItem ->
+                    val inventoryItem = viewModel.inventoryRepository.getItem(actionItem.inventoryItemId)
+                    inventoryItem?.let { item ->
+                        val newItem = NewWarehouseItem(
+                            id = item.id,
+                            name = item.name,
+                            quantity = actionItem.quantity,
+                            price = actionItem.price
+                        )
+                        sharedViewModel.addItem(newItem)
+                    }
+                }
+            }
+        }
+    }
 
     // **Effect to load next selected item into input fields**
     LaunchedEffect(selectedItem) {
@@ -164,7 +234,10 @@ fun AddWarehouseItemScreen(
     ) {
         // **Warehouse Action Details Section**
         item {
-            Text(text = "Add Warehouse Action", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = if (isEditMode) "Edit Warehouse Action" else "Add Warehouse Action", 
+                style = MaterialTheme.typography.titleLarge
+            )
         }
 
         item {
@@ -431,7 +504,7 @@ fun AddWarehouseItemScreen(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Text("Submit Action")
+                Text(if (isEditMode) "Update Action" else "Submit Action")
             }
         }
     }
@@ -492,40 +565,4 @@ data class InventoryItem(
     val unitPrice: Double
 )
 
-@Composable
-fun PopulateViewModelForPreview(viewModel: AddWarehouseSharedViewModel) {
-    // Example items to add for preview purposes
-    val items = listOf(
-        InventoryItem(id = 1, name = "Sample Item 1", quantity = 10, unitPrice = 15.0),
-        InventoryItem(id = 2, name = "Sample Item 2", quantity = 5, unitPrice = 25.0),
-        InventoryItem(id = 3, name = "Sample Item 3", quantity = 20, unitPrice = 8.0),
-    )
-
-    items.forEach { item ->
-        viewModel.addItem(
-            NewWarehouseItem(
-                id = item.id.toLong(),
-                name = item.name,
-                quantity = item.quantity,
-                price = item.unitPrice
-            )
-        )
-    }
-
-    viewModel.setActionName("Sample Action")
-    viewModel.setActionType(WarehouseActionType.INBOUND)
-    viewModel.setActionStatus(WarehouseActionStatus.DRAFT)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddWarehouseItemScreenPreview() {
-    val viewModel = AddWarehouseSharedViewModel()
-    PopulateViewModelForPreview(viewModel)
-
-    AddWarehouseItemScreen(
-        onSelectItemsClick = {},
-        onSubmitClick = { _, _ -> },
-        sharedViewModel = viewModel
-    )
-}
+// Preview functionality removed
