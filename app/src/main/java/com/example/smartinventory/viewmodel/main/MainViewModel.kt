@@ -3,6 +3,8 @@ package com.example.smartinventory.viewmodel.main
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartinventory.data.local.database.InventoryDatabase
@@ -13,13 +15,35 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: InventoryRepository
-    lateinit var allInventoryItems: LiveData<List<InventoryItem>>
+    
+    // Use a mediator LiveData to combine repository data with refresh events
+    private val _allInventoryItems = MediatorLiveData<List<InventoryItem>>()
+    val allInventoryItems: LiveData<List<InventoryItem>> = _allInventoryItems
+    
+    // Track when we need to force refresh
+    private val refreshTrigger = MutableLiveData<Long>()
 
     init {
         val inventoryDao = InventoryDatabase.getDatabase(application).inventoryDao()
         repository = InventoryRepository(inventoryDao)
+        
+        // Add the repository's LiveData as a source
+        _allInventoryItems.addSource(repository.allItems) { items ->
+            _allInventoryItems.value = items
+        }
+        
+        // Also observe EventBus's inventory updated event
+        _allInventoryItems.addSource(com.example.smartinventory.utils.EventBus.inventoryUpdatedEvent) {
+            // Force refresh by re-requesting data from repository
+            refreshData()
+        }
+    }
+    
+    // Method to force refresh the data
+    fun refreshData() {
         viewModelScope.launch {
-            allInventoryItems = repository.getAllItems()
+            // This just triggers the LiveData again with the timestamp
+            refreshTrigger.value = System.currentTimeMillis()
         }
     }
 

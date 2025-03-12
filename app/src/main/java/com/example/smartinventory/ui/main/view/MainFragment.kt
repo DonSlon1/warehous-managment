@@ -6,8 +6,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.smartinventory.data.local.database.InventoryDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.example.smartinventory.R
 import com.example.smartinventory.databinding.FragmentMainBinding
 import com.example.smartinventory.ui.main.adapter.InventoryAdapter
@@ -34,7 +39,7 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
         inventoryAdapter = InventoryAdapter { inventoryItem ->
             // Navigate to AddItemFragment with the selected item for editing
             val action = MainFragmentDirections.actionMainFragmentToAddItemFragment(inventoryItem)
@@ -47,12 +52,32 @@ class MainFragment : Fragment() {
         }
 
         mainViewModel.allInventoryItems.observe(viewLifecycleOwner) { items ->
-            inventoryAdapter.submitList(items)
+            // Create a new list to force DiffUtil to detect changes
+            val newList = items.toMutableList()
+            inventoryAdapter.submitList(newList)
         }
 
         binding.fabAddItem.setOnClickListener {
             // Navigate to AddItemFragment without any item for adding a new item
             findNavController().navigate(R.id.action_mainFragment_to_addItemFragment)
+        }
+    }
+    
+    // Force a refresh every time the fragment resumes
+    override fun onResume() {
+        super.onResume()
+        forceRefresh()
+    }
+    
+    private fun forceRefresh() {
+        // Force a refresh by requesting new data from database
+        val db = InventoryDatabase.getDatabase(requireContext())
+        lifecycleScope.launch {
+            // Create a new DAO and query directly to bypass any caching
+            val freshItems = db.inventoryDao().getAllItemsSync()
+            withContext(Dispatchers.Main) {
+                inventoryAdapter.submitList(freshItems)
+            }
         }
     }
 

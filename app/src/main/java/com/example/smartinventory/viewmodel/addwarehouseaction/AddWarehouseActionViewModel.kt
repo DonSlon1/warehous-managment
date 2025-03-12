@@ -42,28 +42,48 @@ class AddWarehouseActionViewModel @Inject constructor(
 
     fun insertWarehouseActionWithItems(warehouseAction: WarehouseAction, items: List<WarehouseActionItem>) {
         viewModelScope.launch {
-
-            items.forEach {
-                if (!updateItemQuantity(it,warehouseAction.type)) {
-                    throw Exception("Not enough quantity")
+            try {
+                items.forEach {
+                    if (!updateItemQuantity(it, warehouseAction.type)) {
+                        throw Exception("Not enough quantity")
+                    }
                 }
+                repository.insertWarehouseActionWithItems(warehouseAction, items)
+                
+                // Broadcast final notification that inventory has been fully updated
+                com.example.smartinventory.utils.EventBus.postEvent(com.example.smartinventory.utils.AppEvent.InventoryUpdated)
+            } catch (e: Exception) {
+                throw e
             }
-            repository.insertWarehouseActionWithItems(warehouseAction, items)
         }
     }
 
-    private suspend fun updateItemQuantity(item: WarehouseActionItem,actionType: WarehouseActionType): Boolean {
-        var quantity = inventoryRepository.getQuantity(item.inventoryItemId)
+    private suspend fun updateItemQuantity(item: WarehouseActionItem, actionType: WarehouseActionType): Boolean {
+        // Get the full inventory item, not just its quantity
+        val inventoryItem = inventoryRepository.getItem(item.inventoryItemId) ?: return false
+        
+        // Calculate new quantity
+        var newQuantity = inventoryItem.quantity
         if (actionType == WarehouseActionType.INBOUND) {
-            quantity += item.quantity
+            newQuantity += item.quantity
         } else {
-            quantity -= item.quantity
+            newQuantity -= item.quantity
         }
-        if (quantity < 0) {
+        
+        // Check if quantity would go negative
+        if (newQuantity < 0) {
             return false
         }
-        inventoryRepository.updateQuantity(item.inventoryItemId, quantity)
-
+        
+        // Create an updated inventory item
+        val updatedItem = inventoryItem.copy(quantity = newQuantity)
+        
+        // Use update instead of updateQuantity to ensure full entity update
+        inventoryRepository.update(updatedItem)
+        
+        // Emit an event to notify that inventory has been updated
+        com.example.smartinventory.utils.EventBus.postEvent(com.example.smartinventory.utils.AppEvent.InventoryUpdated)
+        
         return true
     }
 

@@ -26,12 +26,12 @@ class InventoryRepository @Inject constructor(
         return inventoryDao.getItem(id)
     }
 
-    suspend fun getAllItems(): LiveData<List<InventoryItem>> {
-        return inventoryDao.getAllItems()
-    }
+    // Removed redundant method as we already have the allItems property
+    // that provides the same LiveData
 
     suspend fun updateQuantity(id: Long, quantity: Int) {
-        inventoryDao.updateQuantity(id, quantity)
+        // Use the new method that forces invalidation
+        inventoryDao.updateQuantityWithInvalidation(id, quantity)
     }
     suspend fun getQuantity(id: Long): Int {
         return inventoryDao.getQuantity(id) ?: 0
