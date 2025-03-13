@@ -11,8 +11,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.smartinventory.R
 import com.example.smartinventory.databinding.FragmentWarehouseActionBinding
 import com.example.smartinventory.ui.warehouseaction.adapter.WarehouseActionAdapter
+import com.example.smartinventory.viewmodel.shared.AddWarehouseSharedViewModel
 import com.example.smartinventory.viewmodel.warehouseaction.WarehouseActionViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.fragment.app.activityViewModels
 
 @AndroidEntryPoint
 class WarehouseActionFragment: Fragment() {
@@ -21,6 +23,7 @@ class WarehouseActionFragment: Fragment() {
 
     private lateinit var warehouseActionAdapter: WarehouseActionAdapter
     private lateinit var warehouseActionViewModel: WarehouseActionViewModel
+    private val sharedViewModel: AddWarehouseSharedViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,6 +55,9 @@ class WarehouseActionFragment: Fragment() {
         }
 
         binding.fabAddItem.setOnClickListener {
+            // Reset the shared ViewModel data before navigating
+            sharedViewModel.resetAllData()
+            
             // Navigate to AddWarehouseItemFragment without any item for adding a new item
             findNavController().navigate(R.id.action_warehouseActionFragment_to_navAddWarehouseItemFragment)
         }

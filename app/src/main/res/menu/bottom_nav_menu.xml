@@ -12,5 +12,9 @@
             android:id="@+id/warehouseActionFragment"
             android:icon="@drawable/archive_arrow_down"
             android:title="@string/warehouse_actions" />
+        <item
+            android:id="@+id/apiDataFragment"
+            android:icon="@drawable/api_icon"
+            android:title="@string/api_products" />
     </group>
 </menu>

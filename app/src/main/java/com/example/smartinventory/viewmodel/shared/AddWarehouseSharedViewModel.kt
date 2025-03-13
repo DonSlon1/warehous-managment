@@ -34,6 +34,15 @@ class AddWarehouseSharedViewModel @Inject constructor() : ViewModel() {
     private val _selectedItem: MutableState<InventoryItem?> = mutableStateOf(null)
 
     val selectedItem: MutableState<InventoryItem?> get() = _selectedItem
+    
+    // Reset all data
+    fun resetAllData() {
+        _actionName.value = ""
+        _actionType.value = WarehouseActionType.INBOUND
+        _actionStatus.value = WarehouseActionStatus.DRAFT
+        _addedItems.value = mutableListOf()
+        _selectedItem.value = null
+    }
 
     // **Updating Action Details**
     fun setActionName(name: String) {

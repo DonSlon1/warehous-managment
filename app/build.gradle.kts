@@ -102,6 +102,15 @@ dependencies {
     // ML Kit Vision
     implementation(libs.barcode.scanning)
     implementation(libs.common)
+    
+    // Retrofit for API calls
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    
+    // Coil for image loading
+    implementation(libs.coil.compose)
 
     // Testing dependencies
     testImplementation(libs.junit)

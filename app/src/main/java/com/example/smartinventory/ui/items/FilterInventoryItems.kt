@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,13 +61,14 @@ class FilterInventoryItems @Inject constructor(
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                viewModel = hiltViewModel()
-                var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-                val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-                    if (bitmap != null) {
-                        Log.d(TAG, "Captured image: Width=${bitmap.width}, Height=${bitmap.height}")
-                        capturedBitmap = bitmap
+                MaterialTheme {
+                    viewModel = hiltViewModel()
+                    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    
+                    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+                        if (bitmap != null) {
+                            Log.d(TAG, "Captured image: Width=${bitmap.width}, Height=${bitmap.height}")
+                            capturedBitmap = bitmap
                         val image = InputImage.fromBitmap(bitmap, 0)
                         scanBarcodes(image) { barcodes ->
                             if (barcodes.isNotEmpty()) {
@@ -98,6 +100,7 @@ class FilterInventoryItems @Inject constructor(
                         }
                     }
                 )
+                }
             }
         }
     }
@@ -128,9 +131,13 @@ fun AddWarehouseItemScreen(
     items: List<InventoryItem>,
     onItemClicked: (InventoryItem) -> Unit
 ) {
+    // Get the Material3 color scheme
+    val colorScheme = MaterialTheme.colorScheme
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(colorScheme.background)
             .padding(16.dp)
     ) {
         // Search TextField
@@ -166,11 +173,14 @@ fun AddWarehouseItemScreen(
 
 @Composable
 fun WarehouseItemRow(item: InventoryItem, onItemClicked: (InventoryItem) -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(colorScheme.surfaceVariant)
             .clickable { onItemClicked(item) }
-            .padding(8.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {

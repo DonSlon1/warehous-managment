@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,8 +54,36 @@ class AddWarehouseItemFragment : Fragment() {
             if (warehouseActionId > 0) {
                 // We're in edit mode, load the warehouse action
                 viewModel.loadWarehouseAction(warehouseActionId)
+            } else {
+                // We're in creation mode, clear any previous data
+                clearInputData()
+            }
+        } ?: run {
+            // No arguments means creation mode
+            clearInputData()
+        }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        
+        // When returning from the filter screen, if we're not in edit mode,
+        // make sure we clear any previous state except the selected items
+        if (warehouseActionId <= 0 && !viewModel.isEditMode) {
+            // Only restore the added items (don't clear them)
+            val currentItems = ArrayList(sharedViewModel.addedItems.value)
+            sharedViewModel.resetAllData()
+            
+            // Re-add the previously added items
+            currentItems.forEach { item ->
+                sharedViewModel.addItem(item)
             }
         }
+    }
+    
+    private fun clearInputData() {
+        // Reset all data in the shared ViewModel
+        sharedViewModel.resetAllData()
     }
 
     override fun onCreateView(
@@ -62,12 +91,13 @@ class AddWarehouseItemFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                AddWarehouseItemScreen(
-                    onSelectItemsClick = {
-                        // Navigate to FilterInventoryItems
-                        findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment)
-                    },
-                    onSubmitClick = { actionDetails, addedItems ->
+                androidx.compose.material3.MaterialTheme {
+                    AddWarehouseItemScreen(
+                        onSelectItemsClick = {
+                            // Navigate to FilterInventoryItems
+                            findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_filterInventoryItemsFragment)
+                        },
+                        onSubmitClick = { actionDetails, addedItems ->
                         val warehouseAction = if (viewModel.isEditMode) {
                             // If editing, use the existing ID
                             WarehouseAction(
@@ -109,6 +139,9 @@ class AddWarehouseItemFragment : Fragment() {
                             return@AddWarehouseItemScreen
                         }
 
+                        // Clear the view model data to prevent stale data
+                        sharedViewModel.resetAllData()
+                        
                         // Navigate back to warehouse actions list
                         findNavController().navigate(R.id.action_navAddWarehouseItemFragment_to_warehouseActionFragment)
                     },
@@ -116,6 +149,7 @@ class AddWarehouseItemFragment : Fragment() {
                     isEditMode = viewModel.isEditMode,
                     viewModel = viewModel
                 )
+                }
             }
         }
     }
@@ -167,36 +201,46 @@ fun AddWarehouseItemScreen(
     // Observe the currentWarehouseAction for edit mode
     val currentWarehouseAction by viewModel.currentWarehouseAction.observeAsState()
     
-    // Effect to load warehouse action data when in edit mode
-    LaunchedEffect(currentWarehouseAction) {
-        currentWarehouseAction?.let { action ->
-            // Set the action details in the shared view model
-            sharedViewModel.setActionName(action.name)
-            sharedViewModel.setActionType(action.type)
-            sharedViewModel.setActionStatus(action.status)
-            
-            // Load the action items from the database and add them to the shared view model
-            viewModel.repository.getWarehouseActionWithItems(action.id)?.let { actionPair ->
-                // Clear existing items first
-                addedItems.value.forEach { item ->
-                    sharedViewModel.removeItem(item)
-                }
+    // Effect to handle loading data or resetting fields
+    LaunchedEffect(currentWarehouseAction, isEditMode) {
+        if (isEditMode && currentWarehouseAction != null) {
+            // Edit mode with data - load the existing action data
+            currentWarehouseAction?.let { action ->
+                // Set the action details in the shared view model
+                sharedViewModel.setActionName(action.name)
+                sharedViewModel.setActionType(action.type)
+                sharedViewModel.setActionStatus(action.status)
                 
-                // Add the items from the database
-                val items = actionPair.second
-                items.forEach { actionItem ->
-                    val inventoryItem = viewModel.inventoryRepository.getItem(actionItem.inventoryItemId)
-                    inventoryItem?.let { item ->
-                        val newItem = NewWarehouseItem(
-                            id = item.id,
-                            name = item.name,
-                            quantity = actionItem.quantity,
-                            price = actionItem.price
-                        )
-                        sharedViewModel.addItem(newItem)
+                // Load the action items from the database and add them to the shared view model
+                viewModel.repository.getWarehouseActionWithItems(action.id)?.let { actionPair ->
+                    // Clear existing items first
+                    addedItems.value.forEach { item ->
+                        sharedViewModel.removeItem(item)
+                    }
+                    
+                    // Add the items from the database
+                    val items = actionPair.second
+                    items.forEach { actionItem ->
+                        val inventoryItem = viewModel.inventoryRepository.getItem(actionItem.inventoryItemId)
+                        inventoryItem?.let { item ->
+                            val newItem = NewWarehouseItem(
+                                id = item.id,
+                                name = item.name,
+                                quantity = actionItem.quantity,
+                                price = actionItem.price
+                            )
+                            sharedViewModel.addItem(newItem)
+                        }
                     }
                 }
             }
+        } else {
+            // Creation mode - clear input fields
+            itemName = ""
+            itemQuantity = ""
+            itemPrice = ""
+            currentProcessingItem = null
+            isEditing = false
         }
     }
 
@@ -225,10 +269,14 @@ fun AddWarehouseItemScreen(
         }
     }
 
+    // Get the Material3 color scheme
+    val colorScheme = MaterialTheme.colorScheme
+    
     // **Main Scrollable Container**
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(colorScheme.background)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -520,7 +568,10 @@ fun ItemRow(
     Card(
         modifier = Modifier
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
     ) {
         Row(
             modifier = Modifier

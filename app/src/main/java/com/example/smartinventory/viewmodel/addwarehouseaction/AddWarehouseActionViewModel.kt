@@ -49,8 +49,8 @@ class AddWarehouseActionViewModel @Inject constructor(
     // Load a warehouse action for editing
     fun loadWarehouseAction(warehouseActionId: Long) {
         if (warehouseActionId <= 0) {
-            isEditMode = false
-            _currentWarehouseAction.value = null
+            // Reset to creation mode
+            resetToCreationMode()
             return
         }
 
@@ -63,6 +63,13 @@ class AddWarehouseActionViewModel @Inject constructor(
                 _currentWarehouseAction.value = it.first
             }
         }
+    }
+    
+    private fun resetToCreationMode() {
+        isEditMode = false
+        editingWarehouseActionId = -1L
+        _currentWarehouseAction.value = null
+        _filterQuery.value = ""
     }
 
     fun insertWarehouseActionWithItems(warehouseAction: WarehouseAction, items: List<WarehouseActionItem>) {

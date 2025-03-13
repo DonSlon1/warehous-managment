@@ -1,12 +1,15 @@
 package com.example.smartinventory
 
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.smartinventory.databinding.ActivityMainBinding
+import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -17,6 +20,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Apply dynamic colors on Android 12+ (Material You)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            DynamicColors.applyToActivityIfAvailable(this)
+        }
+        
+        // Use system dark mode setting
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 
         // Inflate the layout using Data Binding
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -32,6 +43,7 @@ class MainActivity : AppCompatActivity() {
             setOf(
                 R.id.itemFragment,
                 R.id.warehouseActionFragment,
+                R.id.apiDataFragment
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)

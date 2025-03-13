@@ -65,4 +65,9 @@
             app:destination="@id/navAddWarehouseItemFragment" />
     </fragment>
 
+    <fragment
+        android:id="@+id/apiDataFragment"
+        android:name="com.example.smartinventory.ui.apidata.view.ApiDataFragment"
+        android:label="API Products" />
+
 </navigation>
